@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:spendwise/features/accounts/domain/entities/account_entity.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
-import '../../../../database/app_database.dart';
 
 class BalanceCard extends StatefulWidget {
-  final List<Account> accounts;
+  final List<AccountEntity> accounts;
   const BalanceCard({super.key, required this.accounts});
 
   @override

@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/constants/app_strings.dart';
+import '../domain/entities/app_settings.dart';
 import '../providers/settings_provider.dart';
 import 'widgets/settings_card.dart';
 import 'widgets/settings_divider.dart';
@@ -139,8 +142,8 @@ class SettingsScreen extends ConsumerWidget {
                 SettingsTile(
                   icon: Icons.download_outlined,
                   title: 'Export to CSV',
-                  subtitle: 'Download all transactions as CSV',
-                  onTap: () => _showComingSoon(context, 'Export to CSV'),
+                  subtitle: 'Share all transactions as a spreadsheet',
+                  onTap: () => _exportCsv(context, ref),
                   trailing: const Icon(
                     Icons.chevron_right,
                     color: AppColors.primary,
@@ -412,6 +415,57 @@ class SettingsScreen extends ConsumerWidget {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _exportCsv(BuildContext context, WidgetRef ref) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        content: Row(
+          children: [
+            const CircularProgressIndicator(color: AppColors.primary),
+            const SizedBox(width: AppSizes.md),
+            Text('Preparing export…', style: GoogleFonts.poppins()),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      final filePath = await ref.read(settingsProvider.notifier).exportCsv();
+
+      if (!context.mounted) return;
+      Navigator.pop(context); // Dismiss loading dialog
+
+      // Share_plus ^12.x API — ShareParams replaces shareXFiles
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(filePath, mimeType: 'text/csv')],
+          subject: 'SpendWise Transactions Export',
+          text:
+              'My SpendWise transactions exported on '
+              '${DateFormat('MMM d, y').format(DateTime.now())}',
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      Navigator.pop(context); // Dismiss loading dialog
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Export failed. Please try again.',
+            style: GoogleFonts.poppins(),
+          ),
+          backgroundColor: AppColors.expense,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+          ),
+        ),
+      );
     }
   }
 }

@@ -1,13 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/providers/app_providers.dart';
-import '../../../core/services/notification_service.dart';
-import '../../../database/app_database.dart';
+import '../../../../core/utils/app_logger.dart';
+import '../../../../core/services/notification_service.dart';
 import '../../accounts/providers/accounts_provider.dart';
+import '../../budgets/budgets_providers.dart';
+import '../../categories/categories_providers.dart';
 import '../../settings/providers/settings_provider.dart';
+import '../domain/entities/transaction_entity.dart';
+import '../domain/usecases/create_transaction_usecase.dart';
+import '../transactions_providers.dart';
 
-final transactionsStreamProvider = StreamProvider<List<Transaction>>((ref) {
-  return ref.watch(transactionsRepositoryProvider).watchAllTransactions();
-});
+// ── Month selector ────────────────────────────────────────────────────────────
 
 class SelectedMonthNotifier extends Notifier<DateTime> {
   @override
@@ -23,114 +25,131 @@ final selectedMonthProvider = NotifierProvider<SelectedMonthNotifier, DateTime>(
   SelectedMonthNotifier.new,
 );
 
-final transactionsByMonthProvider = FutureProvider<List<Transaction>>((ref) {
-  final selected = ref.watch(selectedMonthProvider);
-  return ref
-      .watch(transactionsRepositoryProvider)
-      .getTransactionsByMonth(selected.year, selected.month);
+// ── Stream providers ──────────────────────────────────────────────────────────
+
+final transactionsStreamProvider = StreamProvider<List<TransactionEntity>>((
+  ref,
+) {
+  return ref.watch(watchAllTransactionsUseCaseProvider).call();
 });
 
-class TransactionsNotifier extends AsyncNotifier<List<Transaction>> {
+final transactionsByMonthProvider = StreamProvider<List<TransactionEntity>>((
+  ref,
+) {
+  final selected = ref.watch(selectedMonthProvider);
+
+  return ref.watch(watchAllTransactionsUseCaseProvider).call().map((
+    transactions,
+  ) {
+    // Filter to only the selected month client-side
+    return transactions.where((t) {
+      return t.date.year == selected.year && t.date.month == selected.month;
+    }).toList();
+  });
+});
+
+// ── Notifier ──────────────────────────────────────────────────────────────────
+
+class TransactionsNotifier extends AsyncNotifier<List<TransactionEntity>> {
   @override
-  Future<List<Transaction>> build() async {
-    return ref
-        .watch(transactionsRepositoryProvider)
-        .watchAllTransactions()
-        .first;
+  Future<List<TransactionEntity>> build() async {
+    return ref.watch(watchAllTransactionsUseCaseProvider).call().first;
   }
 
-  Future<void> createTransaction({
-    required double amount,
-    required String type,
-    required int accountId,
-    required int categoryId,
-    required DateTime date,
-    String? note,
-    bool isRecurring = false,
-    String? recurringInterval,
-  }) async {
-    await ref
-        .read(transactionsRepositoryProvider)
-        .createTransaction(
-          amount: amount,
-          type: type,
-          accountId: accountId,
-          categoryId: categoryId,
-          date: date,
-          note: note,
-          isRecurring: isRecurring,
-          recurringInterval: recurringInterval,
+  Future<void> createTransaction(CreateTransactionParams params) async {
+    final result = await ref
+        .read(createTransactionUseCaseProvider)
+        .call(params);
+    result.when(
+      success: (_) {
+        AppLogger.info('TransactionsNotifier: transaction created');
+        ref.invalidateSelf();
+        // ✅ Still invalidate accounts so balance card updates immediately
+        ref.invalidate(accountsNotifierProvider);
+
+        if (params.type == 'expense') {
+          _checkBudgetAlert(params.categoryId);
+        }
+      },
+      failure: (msg) {
+        AppLogger.error(
+          'TransactionsNotifier: createTransaction failed — $msg',
         );
-    ref.invalidateSelf();
-    ref.invalidate(accountsNotifierProvider);
-
-    if (type == 'expense') {
-      await _checkBudgetAlert(categoryId);
-    }
+        throw Exception(msg);
+      },
+    );
   }
+
+  Future<void> deleteTransaction(TransactionEntity transaction) async {
+    final result = await ref
+        .read(deleteTransactionUseCaseProvider)
+        .call(transaction);
+    result.when(
+      success: (_) {
+        AppLogger.info(
+          'TransactionsNotifier: deleted transaction id=${transaction.id}',
+        );
+        ref.invalidateSelf();
+        ref.invalidate(accountsNotifierProvider);
+      },
+      failure: (msg) {
+        AppLogger.error(
+          'TransactionsNotifier: deleteTransaction failed — $msg',
+        );
+        throw Exception(msg);
+      },
+    );
+  }
+
+  // ── Private helpers ───────────────────────────────────────────────────────
 
   Future<void> _checkBudgetAlert(int categoryId) async {
     try {
       final settings = ref.read(settingsProvider).value;
       if (settings == null || !settings.budgetAlerts) return;
 
-      final budgets = await ref
-          .read(budgetsRepositoryProvider)
-          .getActiveBudgets();
-
+      final budgetsResult = await ref
+          .read(getActiveBudgetsUseCaseProvider)
+          .call();
+      final budgets = budgetsResult.dataOrNull ?? [];
       final budget = budgets
           .where((b) => b.categoryId == categoryId)
           .firstOrNull;
-
       if (budget == null) return;
 
       final now = DateTime.now();
-      final transactions = await ref
-          .read(transactionsRepositoryProvider)
-          .getTransactionsByMonth(now.year, now.month);
+      final txResult = await ref
+          .read(getTransactionsByMonthUseCaseProvider)
+          .call(now.year, now.month);
 
+      final transactions = txResult.dataOrNull ?? [];
       final spent = transactions
           .where((t) => t.type == 'expense' && t.categoryId == categoryId)
           .fold(0.0, (sum, t) => sum + t.amount);
 
       final percentage = spent / budget.amount;
+      if (percentage < 0.8) return;
 
-      if (percentage >= 0.8) {
-        final categories = await ref
-            .read(categoriesRepositoryProvider)
-            .getAllCategories();
-        final category = categories
-            .where((c) => c.id == categoryId)
-            .firstOrNull;
+      final catResult = await ref.read(getAllCategoriesUseCaseProvider).call();
+      final category = catResult.dataOrNull
+          ?.where((c) => c.id == categoryId)
+          .firstOrNull;
 
-        await NotificationService.instance.showBudgetAlert(
-          categoryName: category?.name ?? 'Category',
-          percentage: percentage,
-        );
-      }
-    } catch (_) {}
-  }
-
-  Future<void> deleteTransaction({
-    required int id,
-    required int accountId,
-    required double amount,
-    required String type,
-  }) async {
-    await ref
-        .read(transactionsRepositoryProvider)
-        .deleteTransaction(
-          id,
-          accountId: accountId,
-          amount: amount,
-          type: type,
-        );
-    ref.invalidateSelf();
-    ref.invalidate(accountsNotifierProvider);
+      await NotificationService.instance.showBudgetAlert(
+        categoryName: category?.name ?? 'Category',
+        percentage: percentage,
+      );
+    } catch (e, st) {
+      AppLogger.warning(
+        'TransactionsNotifier: _checkBudgetAlert failed',
+        e,
+        st,
+      );
+    }
   }
 }
 
 final transactionsNotifierProvider =
-    AsyncNotifierProvider<TransactionsNotifier, List<Transaction>>(
+    AsyncNotifierProvider<TransactionsNotifier, List<TransactionEntity>>(
       TransactionsNotifier.new,
     );

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_sizes.dart';
-import '../../../database/app_database.dart';
-import '../../categories/providers/categories_provider.dart';
+import 'package:spendwise/features/categories/domain/entities/category_entity.dart';
+import 'package:spendwise/features/categories/domain/usecases/create_category_usecase.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_sizes.dart';
+import '../providers/categories_provider.dart';
 import 'widgets/categories_list.dart';
 import 'widgets/add_category_sheet.dart';
 
@@ -87,13 +88,24 @@ class CategoriesScreen extends ConsumerWidget {
         onSave: (name, icon, color, type) async {
           await ref
               .read(categoriesNotifierProvider.notifier)
-              .createCategory(name: name, icon: icon, color: color, type: type);
+              .createCategory(
+                CreateCategoryParams(
+                  name: name,
+                  icon: icon,
+                  color: color,
+                  type: type,
+                ),
+              );
         },
       ),
     );
   }
 
-  void _confirmDelete(BuildContext context, WidgetRef ref, Category category) {
+  void _confirmDelete(
+    BuildContext context,
+    WidgetRef ref,
+    CategoryEntity category,
+  ) {
     if (category.isDefault) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -112,7 +124,7 @@ class CategoriesScreen extends ConsumerWidget {
     }
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text(
           'Delete Category',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
@@ -123,15 +135,15 @@ class CategoriesScreen extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text('Cancel', style: GoogleFonts.poppins()),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               ref
                   .read(categoriesNotifierProvider.notifier)
-                  .deleteCategory(category.id);
+                  .deleteCategory(category.id!);
             },
             child: Text(
               'Delete',

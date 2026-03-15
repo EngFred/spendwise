@@ -34,21 +34,23 @@ Track your income and expenses, manage accounts, set budgets, and grow your savi
 | 🔐 **Biometric Lock** | Fingerprint / Face ID app protection |
 | 🌙 **Dark Mode** | Full dark & light theme support |
 | 🗂 **Categories** | Fully customizable spending categories |
-| 📤 **Export** | Export transactions to CSV *(coming soon)* |
+| 📤 **Export** | Export all transactions to CSV and share via any app |
 
 ---
 
 ## 📱 Screenshots
 
-> _Add your screenshots here_
-
 | Splash | Dashboard | Transactions |
 |--------|-----------|--------------|
-| ![](screenshots/splash.png) | ![](screenshots/dashboard.png) | ![](screenshots/transactions.png) |
+| ![Splash](screenshots/splash.png) | ![Dashboard](screenshots/dashboard.png) | ![Transactions](screenshots/transactions.png) |
 
-| Budgets | Goals | Settings |
-|---------|-------|----------|
-| ![](screenshots/budgets.png) | ![](screenshots/goals.png) | ![](screenshots/settings.png) |
+| Accounts | Budgets | Goals |
+|----------|---------|-------|
+| ![Accounts](screenshots/accounts.png) | ![Budgets](screenshots/budgets.png) | ![Goals](screenshots/goals.png) |
+
+| Categories | Reports | Settings |
+|------------|---------|----------|
+| ![Categories](screenshots/categories.png) | ![Reports](screenshots/reports.png) | ![Settings](screenshots/settings.png) |
 
 ---
 
@@ -279,7 +281,7 @@ Please make sure your code follows the existing architecture patterns and passes
 
 ## 📋 Roadmap
 
-- [ ] CSV export
+- [x] CSV export
 - [ ] Local data backup & restore
 - [ ] Recurring transactions
 - [ ] Multi-currency conversion

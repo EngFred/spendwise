@@ -3,13 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_sizes.dart';
-import '../../../core/constants/app_strings.dart';
+import 'package:spendwise/features/accounts/providers/accounts_provider.dart';
+import 'package:spendwise/features/settings/providers/settings_provider.dart';
+import 'package:spendwise/features/transactions/providers/transactions_provider.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/constants/app_strings.dart';
+import '../../settings/domain/entities/app_settings.dart';
 import '../providers/dashboard_provider.dart';
-import '../../../features/transactions/providers/transactions_provider.dart';
-import '../../../features/accounts/providers/accounts_provider.dart';
-import '../../../features/settings/providers/settings_provider.dart';
 import 'widgets/balance_card.dart';
 import 'widgets/recent_transactions.dart';
 import 'widgets/spending_chart.dart';
@@ -273,7 +274,6 @@ class _SummaryCard extends StatelessWidget {
 
 class _BalanceCardShimmer extends StatelessWidget {
   const _BalanceCardShimmer();
-
   @override
   Widget build(BuildContext context) => Container(
     margin: const EdgeInsets.all(AppSizes.md),
@@ -287,7 +287,6 @@ class _BalanceCardShimmer extends StatelessWidget {
 
 class _SummaryRowShimmer extends StatelessWidget {
   const _SummaryRowShimmer();
-
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.symmetric(horizontal: AppSizes.md),
@@ -319,7 +318,6 @@ class _SummaryRowShimmer extends StatelessWidget {
 
 class _ChartShimmer extends StatelessWidget {
   const _ChartShimmer();
-
   @override
   Widget build(BuildContext context) => Container(
     margin: const EdgeInsets.symmetric(horizontal: AppSizes.md),
@@ -333,7 +331,6 @@ class _ChartShimmer extends StatelessWidget {
 
 class _TransactionsShimmer extends StatelessWidget {
   const _TransactionsShimmer();
-
   @override
   Widget build(BuildContext context) => Column(
     children: List.generate(

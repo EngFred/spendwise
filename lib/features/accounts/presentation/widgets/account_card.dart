@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_sizes.dart';
-import '../../../../database/app_database.dart';
+import 'package:spendwise/features/accounts/domain/entities/account_entity.dart';
+import '../../../../../core/constants/app_colors.dart';
+import '../../../../../core/constants/app_sizes.dart';
 
 class AccountCard extends StatelessWidget {
-  final Account account;
+  final AccountEntity account;
   final VoidCallback onDelete;
 
   const AccountCard({super.key, required this.account, required this.onDelete});
@@ -49,7 +49,6 @@ class AccountCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Icon
             Container(
               width: 52,
               height: 52,
@@ -64,7 +63,6 @@ class AccountCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSizes.md),
-            // Info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -113,7 +111,6 @@ class AccountCard extends StatelessWidget {
                 ],
               ),
             ),
-            // Balance
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [

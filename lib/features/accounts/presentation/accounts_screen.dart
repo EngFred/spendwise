@@ -3,12 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_sizes.dart';
-import '../../../core/constants/app_strings.dart';
-import '../../../database/app_database.dart';
+import 'package:spendwise/features/accounts/domain/entities/account_entity.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/constants/app_strings.dart';
 import '../providers/accounts_provider.dart';
-import '../../../shared/widgets/empty_state.dart';
+import '../../../../shared/widgets/empty_state.dart';
 import 'widgets/account_card.dart';
 
 class AccountsScreen extends ConsumerWidget {
@@ -56,7 +56,6 @@ class AccountsScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Total balance banner
                 Container(
                   width: double.infinity,
                   margin: const EdgeInsets.all(AppSizes.md),
@@ -141,10 +140,14 @@ class AccountsScreen extends ConsumerWidget {
     );
   }
 
-  void _confirmDelete(BuildContext context, WidgetRef ref, Account account) {
+  void _confirmDelete(
+    BuildContext context,
+    WidgetRef ref,
+    AccountEntity account,
+  ) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text(
           'Delete Account',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
@@ -155,15 +158,15 @@ class AccountsScreen extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text('Cancel', style: GoogleFonts.poppins()),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               ref
                   .read(accountsNotifierProvider.notifier)
-                  .deleteAccount(account.id);
+                  .deleteAccount(account.id!);
             },
             child: Text(
               'Delete',

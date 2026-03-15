@@ -4,11 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_sizes.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_sizes.dart';
+import '../domain/usecases/create_goal_usecase.dart';
 import '../providers/goals_provider.dart';
-import '../../../shared/widgets/app_button.dart';
-import '../../../shared/widgets/app_text_field.dart';
+import '../../../../shared/widgets/app_button.dart';
+import '../../../../shared/widgets/app_text_field.dart';
 
 class AddGoalScreen extends ConsumerStatefulWidget {
   const AddGoalScreen({super.key});
@@ -84,14 +85,16 @@ class _AddGoalScreenState extends ConsumerState<AddGoalScreen> {
       await ref
           .read(goalsNotifierProvider.notifier)
           .createGoal(
-            name: _nameController.text.trim(),
-            icon: _selectedIcon,
-            color: _selectedColor,
-            targetAmount: double.parse(
-              _targetController.text.replaceAll(',', ''),
+            CreateGoalParams(
+              name: _nameController.text.trim(),
+              icon: _selectedIcon,
+              color: _selectedColor,
+              targetAmount: double.parse(
+                _targetController.text.replaceAll(',', ''),
+              ),
+              savedAmount: double.tryParse(_initialController.text) ?? 0.0,
+              deadline: _deadline,
             ),
-            savedAmount: double.tryParse(_initialController.text) ?? 0.0,
-            deadline: _deadline,
           );
 
       if (mounted) {
@@ -147,7 +150,6 @@ class _AddGoalScreenState extends ConsumerState<AddGoalScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Icon picker
               Text(
                 'Icon',
                 style: GoogleFonts.poppins(
@@ -203,7 +205,6 @@ class _AddGoalScreenState extends ConsumerState<AddGoalScreen> {
 
               const SizedBox(height: AppSizes.lg),
 
-              // Goal name
               AppTextField(
                 label: 'Goal Name',
                 hint: 'e.g. New Laptop, Trip to Mombasa',
@@ -215,7 +216,6 @@ class _AddGoalScreenState extends ConsumerState<AddGoalScreen> {
 
               const SizedBox(height: AppSizes.lg),
 
-              // Target amount
               AppTextField(
                 label: 'Target Amount',
                 controller: _targetController,
@@ -245,7 +245,6 @@ class _AddGoalScreenState extends ConsumerState<AddGoalScreen> {
 
               const SizedBox(height: AppSizes.lg),
 
-              // Initial savings
               AppTextField(
                 label: 'Already Saved (optional)',
                 hint: '0',
@@ -270,7 +269,6 @@ class _AddGoalScreenState extends ConsumerState<AddGoalScreen> {
 
               const SizedBox(height: AppSizes.lg),
 
-              // Deadline
               Text(
                 'Deadline (optional)',
                 style: GoogleFonts.poppins(
@@ -336,7 +334,6 @@ class _AddGoalScreenState extends ConsumerState<AddGoalScreen> {
 
               const SizedBox(height: AppSizes.lg),
 
-              // Color picker
               Text(
                 'Color',
                 style: GoogleFonts.poppins(

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_sizes.dart';
-import '../../../../database/app_database.dart';
+import '../../../../../core/constants/app_colors.dart';
+import '../../../../../core/constants/app_sizes.dart';
+import '../../domain/entities/goal_entity.dart';
 
 class GoalCard extends StatelessWidget {
-  final Goal goal;
+  final GoalEntity goal;
   final VoidCallback onDelete;
   final VoidCallback? onAddSavings;
 
@@ -20,10 +20,8 @@ class GoalCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final progress = goal.targetAmount > 0
-        ? (goal.savedAmount / goal.targetAmount).clamp(0.0, 1.0)
-        : 0.0;
-    final remaining = goal.targetAmount - goal.savedAmount;
+    final progress = goal.progressPercent;
+    final remaining = goal.remaining;
     final color = _hexToColor(goal.color);
 
     return Dismissible(
@@ -134,8 +132,6 @@ class GoalCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: AppSizes.md),
-
-            // Progress bar
             ClipRRect(
               borderRadius: BorderRadius.circular(AppSizes.radiusCircle),
               child: LinearProgressIndicator(
@@ -148,7 +144,6 @@ class GoalCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppSizes.sm),
-
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [

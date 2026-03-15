@@ -1,94 +1,138 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../../../core/providers/app_providers.dart';
-import '../../../core/services/notification_service.dart';
-import '../domain/app_settings.dart';
-
-export '../domain/app_settings.dart';
+import '../../../../core/services/notification_service.dart';
+import '../../../core/utils/app_logger.dart';
+import '../domain/entities/app_settings.dart';
+import '../settings_providers.dart';
 
 class SettingsNotifier extends AsyncNotifier<AppSettings> {
-  static const _keyUserName = 'user_name';
-  static const _keyCurrency = 'currency';
-  static const _keyDarkMode = 'dark_mode';
-  static const _keyDailyReminder = 'daily_reminder';
-  static const _keyBudgetAlerts = 'budget_alerts';
-  static const _keyBiometricLock = 'biometric_lock';
-
   @override
   Future<AppSettings> build() async {
-    final prefs = await SharedPreferences.getInstance();
-    return AppSettings(
-      userName: prefs.getString(_keyUserName) ?? '',
-      currency: prefs.getString(_keyCurrency) ?? 'UGX',
-      isDarkMode: prefs.getBool(_keyDarkMode) ?? true,
-      dailyReminder: prefs.getBool(_keyDailyReminder) ?? false,
-      budgetAlerts: prefs.getBool(_keyBudgetAlerts) ?? true,
-      biometricLock: prefs.getBool(_keyBiometricLock) ?? false,
+    final result = await ref.read(getSettingsUseCaseProvider).call();
+    return result.when(
+      success: (data) => data,
+      failure: (msg) {
+        AppLogger.error('SettingsNotifier.build failed: $msg');
+        // Fall back to defaults rather than crashing the app
+        return const AppSettings();
+      },
     );
   }
 
   Future<void> setUserName(String name) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_keyUserName, name);
-    state = AsyncData(state.value!.copyWith(userName: name));
+    final result = await ref.read(saveUserNameUseCaseProvider).call(name);
+    result.when(
+      success: (_) {
+        state = AsyncData(state.value!.copyWith(userName: name));
+        AppLogger.info('SettingsNotifier: userName updated');
+      },
+      failure: (msg) =>
+          AppLogger.error('SettingsNotifier: setUserName failed — $msg'),
+    );
   }
 
   Future<void> setCurrency(String currency) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_keyCurrency, currency);
-    state = AsyncData(state.value!.copyWith(currency: currency));
+    final result = await ref.read(saveCurrencyUseCaseProvider).call(currency);
+    result.when(
+      success: (_) {
+        state = AsyncData(state.value!.copyWith(currency: currency));
+        AppLogger.info('SettingsNotifier: currency updated to $currency');
+      },
+      failure: (msg) =>
+          AppLogger.error('SettingsNotifier: setCurrency failed — $msg'),
+    );
   }
 
   Future<void> setDarkMode(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_keyDarkMode, value);
-    state = AsyncData(state.value!.copyWith(isDarkMode: value));
+    final result = await ref.read(saveDarkModeUseCaseProvider).call(value);
+    result.when(
+      success: (_) =>
+          state = AsyncData(state.value!.copyWith(isDarkMode: value)),
+      failure: (msg) =>
+          AppLogger.error('SettingsNotifier: setDarkMode failed — $msg'),
+    );
   }
 
   Future<void> setDailyReminder(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-
     if (value) {
       await NotificationService.instance.requestPermissions();
       try {
         await NotificationService.instance.scheduleDailyReminder();
-        // Only persist + update state if scheduling succeeded
-        await prefs.setBool(_keyDailyReminder, true);
-        state = AsyncData(state.value!.copyWith(dailyReminder: true));
+        final result = await ref
+            .read(saveDailyReminderUseCaseProvider)
+            .call(true);
+        result.when(
+          success: (_) =>
+              state = AsyncData(state.value!.copyWith(dailyReminder: true)),
+          failure: (msg) => AppLogger.error(
+            'SettingsNotifier: setDailyReminder persist failed — $msg',
+          ),
+        );
       } catch (e) {
-        // Scheduling failed (e.g. exact alarms denied by user in system settings).
-        // Revert to disabled so the UI stays consistent.
-        await prefs.setBool(_keyDailyReminder, false);
+        // Scheduling failed — revert to disabled
+        await ref.read(saveDailyReminderUseCaseProvider).call(false);
         state = AsyncData(state.value!.copyWith(dailyReminder: false));
-        // Rethrow so the UI can show a snackbar/dialog if desired.
-        rethrow;
+        AppLogger.warning('SettingsNotifier: scheduleDailyReminder failed', e);
+        rethrow; // Let the UI show an error snackbar
       }
     } else {
       await NotificationService.instance.cancelDailyReminder();
-      await prefs.setBool(_keyDailyReminder, false);
-      state = AsyncData(state.value!.copyWith(dailyReminder: false));
+      final result = await ref
+          .read(saveDailyReminderUseCaseProvider)
+          .call(false);
+      result.when(
+        success: (_) =>
+            state = AsyncData(state.value!.copyWith(dailyReminder: false)),
+        failure: (msg) => AppLogger.error(
+          'SettingsNotifier: setDailyReminder false failed — $msg',
+        ),
+      );
     }
   }
 
   Future<void> setBudgetAlerts(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_keyBudgetAlerts, value);
-    state = AsyncData(state.value!.copyWith(budgetAlerts: value));
+    final result = await ref.read(saveBudgetAlertsUseCaseProvider).call(value);
+    result.when(
+      success: (_) =>
+          state = AsyncData(state.value!.copyWith(budgetAlerts: value)),
+      failure: (msg) =>
+          AppLogger.error('SettingsNotifier: setBudgetAlerts failed — $msg'),
+    );
   }
 
   Future<void> setBiometricLock(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_keyBiometricLock, value);
-    state = AsyncData(state.value!.copyWith(biometricLock: value));
+    final result = await ref.read(saveBiometricLockUseCaseProvider).call(value);
+    result.when(
+      success: (_) =>
+          state = AsyncData(state.value!.copyWith(biometricLock: value)),
+      failure: (msg) =>
+          AppLogger.error('SettingsNotifier: setBiometricLock failed — $msg'),
+    );
   }
 
-  // ── Clear all data ──────────────────────
   Future<void> clearAllData() async {
-    final db = ref.read(appDatabaseProvider);
-    await db.delete(db.transactions).go();
-    await db.delete(db.accounts).go();
-    await db.delete(db.budgets).go();
-    await db.delete(db.goals).go();
+    final result = await ref.read(clearAllDataUseCaseProvider).call();
+    result.when(
+      success: (_) => AppLogger.warning('SettingsNotifier: all data cleared'),
+      failure: (msg) {
+        AppLogger.error('SettingsNotifier: clearAllData failed — $msg');
+        throw Exception(msg);
+      },
+    );
+  }
+
+  /// Returns the file path on success so the UI can share it immediately.
+  Future<String> exportCsv() async {
+    final result = await ref.read(exportCsvUseCaseProvider).call();
+    return result.when(
+      success: (filePath) {
+        AppLogger.info('SettingsNotifier: CSV ready at $filePath');
+        return filePath;
+      },
+      failure: (msg) {
+        AppLogger.error('SettingsNotifier: exportCsv failed — $msg');
+        throw Exception(msg);
+      },
+    );
   }
 }
 

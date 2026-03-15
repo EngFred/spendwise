@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_sizes.dart';
-import '../../../../database/app_database.dart';
-import '../../../../shared/widgets/empty_state.dart';
+import 'package:spendwise/features/categories/domain/entities/category_entity.dart';
+import '../../../../../core/constants/app_sizes.dart';
+import '../../../../../shared/widgets/empty_state.dart';
 import 'category_tile.dart';
 
 class CategoriesList extends StatelessWidget {
-  final List<Category> categories;
+  final List<CategoryEntity> categories;
   final String type;
   final VoidCallback onAdd;
-  final void Function(Category) onDelete;
+  final void Function(CategoryEntity) onDelete;
 
   const CategoriesList({
     super.key,

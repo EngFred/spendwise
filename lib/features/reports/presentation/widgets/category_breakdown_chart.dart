@@ -2,14 +2,14 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:spendwise/features/categories/domain/entities/category_entity.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
-import '../../../../database/app_database.dart';
 import '../../providers/reports_provider.dart';
 
 class CategoryBreakdownChart extends StatefulWidget {
   final MonthlySummary summary;
-  final List<Category> categories;
+  final List<CategoryEntity> categories;
 
   const CategoryBreakdownChart({
     super.key,

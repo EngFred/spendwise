@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_sizes.dart';
-import '../../../../database/app_database.dart';
+import '../../../../../core/constants/app_colors.dart';
+import '../../../../../core/constants/app_sizes.dart';
+import '../../domain/entities/transaction_entity.dart';
 
 class TransactionTile extends StatelessWidget {
-  final Transaction transaction;
+  final TransactionEntity transaction;
   final VoidCallback onDelete;
 
   const TransactionTile({
@@ -21,7 +21,7 @@ class TransactionTile extends StatelessWidget {
     final isIncome = transaction.type == 'income';
 
     return Dismissible(
-      key: Key(transaction.id.toString()),
+      key: Key('txn_${transaction.id}'),
       direction: DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,

@@ -3,14 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_sizes.dart';
-import '../../../core/constants/app_strings.dart';
-import '../../../database/app_database.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/constants/app_strings.dart';
+import '../../categories/domain/entities/category_entity.dart';
+import '../../categories/providers/categories_provider.dart';
+import '../../transactions/providers/transactions_provider.dart';
+import '../domain/entities/budget_entity.dart';
 import '../providers/budgets_provider.dart';
-import '../../../features/transactions/providers/transactions_provider.dart';
-import '../../../features/categories/providers/categories_provider.dart';
-import '../../../shared/widgets/empty_state.dart';
+import '../../../../shared/widgets/empty_state.dart';
 import 'widgets/budget_card.dart';
 
 class BudgetsScreen extends ConsumerWidget {
@@ -53,9 +54,10 @@ class BudgetsScreen extends ConsumerWidget {
           }
 
           return categoriesAsync.when(
+            // ✅ categories is now List<CategoryEntity>
             data: (categories) => transactionsAsync.when(
+              // ✅ transactions is now List<TransactionEntity>
               data: (transactions) {
-                // Calculate spent per category this month
                 final spentByCategory = <int, double>{};
                 for (final t in transactions) {
                   if (t.type == 'expense') {
@@ -64,7 +66,6 @@ class BudgetsScreen extends ConsumerWidget {
                   }
                 }
 
-                // Overall budget summary
                 final totalBudgeted = budgets.fold(
                   0.0,
                   (sum, b) => sum + b.amount,
@@ -81,13 +82,11 @@ class BudgetsScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Overall summary card
                       _OverallBudgetCard(
                         totalBudgeted: totalBudgeted,
                         totalSpent: totalSpent,
                         progress: overallProgress.clamp(0.0, 1.0),
                       ),
-
                       Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: AppSizes.md,
@@ -101,7 +100,6 @@ class BudgetsScreen extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: AppSizes.sm),
-
                       ListView.separated(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
@@ -113,7 +111,7 @@ class BudgetsScreen extends ConsumerWidget {
                             const SizedBox(height: AppSizes.sm),
                         itemBuilder: (context, i) {
                           final budget = budgets[i];
-                          final category = categories
+                          final CategoryEntity? category = categories
                               .where((c) => c.id == budget.categoryId)
                               .firstOrNull;
                           final spent =
@@ -145,7 +143,11 @@ class BudgetsScreen extends ConsumerWidget {
     );
   }
 
-  void _confirmDelete(BuildContext context, WidgetRef ref, Budget budget) {
+  void _confirmDelete(
+    BuildContext context,
+    WidgetRef ref,
+    BudgetEntity budget,
+  ) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -167,7 +169,7 @@ class BudgetsScreen extends ConsumerWidget {
               Navigator.pop(context);
               ref
                   .read(budgetsNotifierProvider.notifier)
-                  .deleteBudget(budget.id);
+                  .deleteBudget(budget.id!);
             },
             child: Text(
               'Delete',
@@ -180,7 +182,7 @@ class BudgetsScreen extends ConsumerWidget {
   }
 }
 
-// ── Overall Budget Card ───────────────────────────────────────────────────────
+// ── Overall Budget Card (no type changes needed) ──────────────────────────────
 
 class _OverallBudgetCard extends StatelessWidget {
   final double totalBudgeted;

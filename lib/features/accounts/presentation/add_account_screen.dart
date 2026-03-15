@@ -3,11 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_sizes.dart';
+import 'package:spendwise/features/accounts/domain/usecases/create_account_usecase.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_sizes.dart';
 import '../providers/accounts_provider.dart';
-import '../../../shared/widgets/app_button.dart';
-import '../../../shared/widgets/app_text_field.dart';
+import '../../../../shared/widgets/app_button.dart';
+import '../../../../shared/widgets/app_text_field.dart';
 
 class AddAccountScreen extends ConsumerStatefulWidget {
   const AddAccountScreen({super.key});
@@ -67,14 +68,18 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
       await ref
           .read(accountsNotifierProvider.notifier)
           .createAccount(
-            name: _nameController.text.trim(),
-            type: _selectedType,
-            balance:
-                double.tryParse(_balanceController.text.replaceAll(',', '')) ??
-                0.0,
-            color: _selectedColor,
-            icon: _selectedType,
-            isDefault: _isDefault,
+            CreateAccountParams(
+              name: _nameController.text.trim(),
+              type: _selectedType,
+              balance:
+                  double.tryParse(
+                    _balanceController.text.replaceAll(',', ''),
+                  ) ??
+                  0.0,
+              color: _selectedColor,
+              icon: _selectedType,
+              isDefault: _isDefault,
+            ),
           );
 
       if (mounted) {
@@ -130,7 +135,6 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Account name
               AppTextField(
                 label: 'Account Name',
                 hint: 'e.g. MTN MoMo, Stanbic Bank',
@@ -142,7 +146,6 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
 
               const SizedBox(height: AppSizes.lg),
 
-              // Account type
               Text(
                 'Account Type',
                 style: GoogleFonts.poppins(
@@ -212,7 +215,6 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
 
               const SizedBox(height: AppSizes.lg),
 
-              // Initial balance
               AppTextField(
                 label: 'Opening Balance',
                 hint: '0',
@@ -237,7 +239,6 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
 
               const SizedBox(height: AppSizes.lg),
 
-              // Color picker
               Text(
                 'Color',
                 style: GoogleFonts.poppins(
@@ -292,7 +293,6 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
 
               const SizedBox(height: AppSizes.lg),
 
-              // Set as default
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSizes.md,

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:spendwise/features/transactions/domain/entities/transaction_entity.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
-import '../../../../database/app_database.dart';
 
 class RecentTransactions extends StatelessWidget {
-  final List<Transaction> transactions;
+  final List<TransactionEntity> transactions;
   const RecentTransactions({super.key, required this.transactions});
 
   @override
@@ -54,7 +54,7 @@ class RecentTransactions extends StatelessWidget {
 }
 
 class _TransactionTile extends StatelessWidget {
-  final Transaction transaction;
+  final TransactionEntity transaction;
   final bool isIncome;
   const _TransactionTile({required this.transaction, required this.isIncome});
 

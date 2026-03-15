@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_sizes.dart';
-import '../../../../database/app_database.dart';
+import 'package:spendwise/features/categories/domain/entities/category_entity.dart';
+import '../../../../../core/constants/app_colors.dart';
+import '../../../../../core/constants/app_sizes.dart';
 
 class CategoryTile extends StatelessWidget {
-  final Category category;
+  final CategoryEntity category;
   final VoidCallback onDelete;
 
   const CategoryTile({

@@ -1,41 +1,61 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/providers/app_providers.dart';
-import '../../../database/app_database.dart';
+import 'package:spendwise/features/budgets/domain/usecases/create_budget_usecase.dart'
+    show CreateBudgetParams;
+import '../../../core/utils/app_logger.dart';
+import '../budgets_providers.dart';
+import '../domain/entities/budget_entity.dart';
 
-final budgetsStreamProvider = StreamProvider<List<Budget>>((ref) {
-  return ref.watch(budgetsRepositoryProvider).watchActiveBudgets();
+// ── Stream ────────────────────────────────────────────────────────────────────
+
+final budgetsStreamProvider = StreamProvider<List<BudgetEntity>>((ref) {
+  return ref.watch(watchActiveBudgetsUseCaseProvider).call();
 });
 
-class BudgetsNotifier extends AsyncNotifier<List<Budget>> {
+// ── Notifier ──────────────────────────────────────────────────────────────────
+
+class BudgetsNotifier extends AsyncNotifier<List<BudgetEntity>> {
   @override
-  Future<List<Budget>> build() async {
-    return ref.watch(budgetsRepositoryProvider).getActiveBudgets();
+  Future<List<BudgetEntity>> build() async {
+    final result = await ref.read(getActiveBudgetsUseCaseProvider).call();
+    return result.when(
+      success: (data) => data,
+      failure: (msg) {
+        AppLogger.error('BudgetsNotifier.build failed: $msg');
+        throw Exception(msg);
+      },
+    );
   }
 
-  Future<void> createBudget({
-    required int categoryId,
-    required double amount,
-    required String period,
-    required DateTime startDate,
-    required DateTime endDate,
-  }) async {
-    await ref
-        .read(budgetsRepositoryProvider)
-        .createBudget(
-          categoryId: categoryId,
-          amount: amount,
-          period: period,
-          startDate: startDate,
-          endDate: endDate,
-        );
-    ref.invalidateSelf();
+  Future<void> createBudget(CreateBudgetParams params) async {
+    final result = await ref.read(createBudgetUseCaseProvider).call(params);
+    result.when(
+      success: (_) {
+        AppLogger.info('BudgetsNotifier: budget created');
+        ref.invalidateSelf();
+      },
+      failure: (msg) {
+        AppLogger.error('BudgetsNotifier: createBudget failed — $msg');
+        throw Exception(msg);
+      },
+    );
   }
 
   Future<void> deleteBudget(int id) async {
-    await ref.read(budgetsRepositoryProvider).deleteBudget(id);
-    ref.invalidateSelf();
+    final result = await ref.read(deleteBudgetUseCaseProvider).call(id);
+    result.when(
+      success: (_) {
+        AppLogger.info('BudgetsNotifier: deleted budget id=$id');
+        ref.invalidateSelf();
+      },
+      failure: (msg) {
+        AppLogger.error('BudgetsNotifier: deleteBudget failed — $msg');
+        throw Exception(msg);
+      },
+    );
   }
 }
 
 final budgetsNotifierProvider =
-    AsyncNotifierProvider<BudgetsNotifier, List<Budget>>(BudgetsNotifier.new);
+    AsyncNotifierProvider<BudgetsNotifier, List<BudgetEntity>>(
+      BudgetsNotifier.new,
+    );

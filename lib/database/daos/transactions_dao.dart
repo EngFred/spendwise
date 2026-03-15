@@ -44,4 +44,7 @@ class TransactionsDao extends DatabaseAccessor<AppDatabase>
 
   Future<int> deleteTransaction(int id) =>
       (delete(transactions)..where((t) => t.id.equals(id))).go();
+
+  Future<List<Transaction>> getAllTransactions() =>
+      (select(transactions)..orderBy([(t) => OrderingTerm.desc(t.date)])).get();
 }

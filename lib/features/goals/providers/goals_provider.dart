@@ -1,64 +1,96 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/providers/app_providers.dart';
-import '../../../core/services/notification_service.dart';
-import '../../../database/app_database.dart';
+import '../../../../core/services/notification_service.dart';
+import '../../../core/utils/app_logger.dart';
+import '../domain/entities/goal_entity.dart';
+import '../domain/usecases/add_to_savings_usecase.dart';
+import '../domain/usecases/create_goal_usecase.dart';
+import '../goals_providers.dart';
 
-final goalsStreamProvider = StreamProvider<List<Goal>>((ref) {
-  return ref.watch(goalsRepositoryProvider).watchAllGoals();
+// ── Stream ────────────────────────────────────────────────────────────────────
+
+final goalsStreamProvider = StreamProvider<List<GoalEntity>>((ref) {
+  return ref.watch(watchAllGoalsUseCaseProvider).call();
 });
 
-class GoalsNotifier extends AsyncNotifier<List<Goal>> {
+// ── Notifier ──────────────────────────────────────────────────────────────────
+
+class GoalsNotifier extends AsyncNotifier<List<GoalEntity>> {
   @override
-  Future<List<Goal>> build() async {
-    return ref.watch(goalsRepositoryProvider).getAllGoals();
+  Future<List<GoalEntity>> build() async {
+    final result = await ref.read(getAllGoalsUseCaseProvider).call();
+    return result.when(
+      success: (data) => data,
+      failure: (msg) {
+        AppLogger.error('GoalsNotifier.build failed: $msg');
+        throw Exception(msg);
+      },
+    );
   }
 
-  Future<void> createGoal({
-    required String name,
-    required String icon,
-    required String color,
-    required double targetAmount,
-    double savedAmount = 0.0,
-    DateTime? deadline,
-  }) async {
-    await ref
-        .read(goalsRepositoryProvider)
-        .createGoal(
-          name: name,
-          icon: icon,
-          color: color,
-          targetAmount: targetAmount,
-          savedAmount: savedAmount,
-          deadline: deadline,
-        );
-    ref.invalidateSelf();
+  Future<void> createGoal(CreateGoalParams params) async {
+    final result = await ref.read(createGoalUseCaseProvider).call(params);
+    result.when(
+      success: (_) {
+        AppLogger.info('GoalsNotifier: goal created');
+        ref.invalidateSelf();
+      },
+      failure: (msg) {
+        AppLogger.error('GoalsNotifier: createGoal failed — $msg');
+        throw Exception(msg);
+      },
+    );
   }
 
   Future<void> addToSavings(int id, double amount) async {
-    await ref.read(goalsRepositoryProvider).addToSavings(id, amount);
+    // Step 1 — add the savings amount
+    final result = await ref
+        .read(addToSavingsUseCaseProvider)
+        .call(AddToSavingsParams(id: id, amount: amount));
 
-    // Check if goal is now complete
-    final goals = await ref.read(goalsRepositoryProvider).getAllGoals();
-    final goal = goals.where((g) => g.id == id).firstOrNull;
+    await result.when(
+      success: (_) async {
+        AppLogger.info('GoalsNotifier: added $amount to goal id=$id');
 
-    if (goal != null && goal.savedAmount >= goal.targetAmount) {
-      await ref
-          .read(goalsRepositoryProvider)
-          .updateGoal(goal.copyWith(isCompleted: true));
-      await NotificationService.instance.showGoalReachedNotification(
-        goalName: goal.name,
-      );
-    }
+        // Step 2 — re-fetch to check completion
+        final allResult = await ref.read(getAllGoalsUseCaseProvider).call();
+        final goals = allResult.dataOrNull ?? [];
+        final goal = goals.where((g) => g.id == id).firstOrNull;
 
-    ref.invalidateSelf();
+        if (goal != null && goal.savedAmount >= goal.targetAmount) {
+          // Mark as completed
+          final updatedGoal = goal.copyWith(isCompleted: true);
+          await ref.read(updateGoalUseCaseProvider).call(updatedGoal);
+
+          // Fire notification
+          await NotificationService.instance.showGoalReachedNotification(
+            goalName: goal.name,
+          );
+          AppLogger.info('GoalsNotifier: goal "${goal.name}" completed!');
+        }
+
+        ref.invalidateSelf();
+      },
+      failure: (msg) {
+        AppLogger.error('GoalsNotifier: addToSavings failed — $msg');
+        throw Exception(msg);
+      },
+    );
   }
 
   Future<void> deleteGoal(int id) async {
-    await ref.read(goalsRepositoryProvider).deleteGoal(id);
-    ref.invalidateSelf();
+    final result = await ref.read(deleteGoalUseCaseProvider).call(id);
+    result.when(
+      success: (_) {
+        AppLogger.info('GoalsNotifier: deleted goal id=$id');
+        ref.invalidateSelf();
+      },
+      failure: (msg) {
+        AppLogger.error('GoalsNotifier: deleteGoal failed — $msg');
+        throw Exception(msg);
+      },
+    );
   }
 }
 
-final goalsNotifierProvider = AsyncNotifierProvider<GoalsNotifier, List<Goal>>(
-  GoalsNotifier.new,
-);
+final goalsNotifierProvider =
+    AsyncNotifierProvider<GoalsNotifier, List<GoalEntity>>(GoalsNotifier.new);

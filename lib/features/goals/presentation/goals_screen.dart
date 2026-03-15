@@ -3,12 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_sizes.dart';
-import '../../../core/constants/app_strings.dart';
-import '../../../database/app_database.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/constants/app_strings.dart';
+import '../domain/entities/goal_entity.dart';
 import '../providers/goals_provider.dart';
-import '../../../shared/widgets/empty_state.dart';
+import '../../../../shared/widgets/empty_state.dart';
 import 'widgets/goal_card.dart';
 
 class GoalsScreen extends ConsumerWidget {
@@ -52,7 +52,6 @@ class GoalsScreen extends ConsumerWidget {
           final completed = goals.where((g) => g.isCompleted).toList();
           final active = goals.where((g) => !g.isCompleted).toList();
 
-          // Total saved across all goals
           final totalSaved = goals.fold(0.0, (sum, g) => sum + g.savedAmount);
           final totalTarget = goals.fold(0.0, (sum, g) => sum + g.targetAmount);
 
@@ -61,7 +60,6 @@ class GoalsScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Summary card
                 _GoalsSummaryCard(
                   totalSaved: totalSaved,
                   totalTarget: totalTarget,
@@ -69,7 +67,6 @@ class GoalsScreen extends ConsumerWidget {
                   completedCount: completed.length,
                 ),
 
-                // Active goals
                 if (active.isNotEmpty) ...[
                   Padding(
                     padding: const EdgeInsets.symmetric(
@@ -102,7 +99,6 @@ class GoalsScreen extends ConsumerWidget {
                   ),
                 ],
 
-                // Completed goals
                 if (completed.isNotEmpty) ...[
                   const SizedBox(height: AppSizes.lg),
                   Padding(
@@ -145,10 +141,10 @@ class GoalsScreen extends ConsumerWidget {
     );
   }
 
-  void _confirmDelete(BuildContext context, WidgetRef ref, Goal goal) {
+  void _confirmDelete(BuildContext context, WidgetRef ref, GoalEntity goal) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text(
           'Delete Goal',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
@@ -159,13 +155,13 @@ class GoalsScreen extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text('Cancel', style: GoogleFonts.poppins()),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
-              ref.read(goalsNotifierProvider.notifier).deleteGoal(goal.id);
+              Navigator.pop(dialogContext);
+              ref.read(goalsNotifierProvider.notifier).deleteGoal(goal.id!);
             },
             child: Text(
               'Delete',
@@ -177,11 +173,15 @@ class GoalsScreen extends ConsumerWidget {
     );
   }
 
-  void _showAddSavingsDialog(BuildContext context, WidgetRef ref, Goal goal) {
+  void _showAddSavingsDialog(
+    BuildContext context,
+    WidgetRef ref,
+    GoalEntity goal,
+  ) {
     final controller = TextEditingController();
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text(
           'Add to Savings',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
@@ -197,6 +197,7 @@ class GoalsScreen extends ConsumerWidget {
             const SizedBox(height: AppSizes.md),
             TextField(
               controller: controller,
+              autofocus: true,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
@@ -210,17 +211,17 @@ class GoalsScreen extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text('Cancel', style: GoogleFonts.poppins()),
           ),
           TextButton(
             onPressed: () {
               final amount = double.tryParse(controller.text);
               if (amount != null && amount > 0) {
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
                 ref
                     .read(goalsNotifierProvider.notifier)
-                    .addToSavings(goal.id, amount);
+                    .addToSavings(goal.id!, amount);
               }
             },
             child: Text(
@@ -237,7 +238,7 @@ class GoalsScreen extends ConsumerWidget {
   }
 }
 
-// ── Goals Summary Card ────────────────────────────────────────────────────────
+// ── Goals Summary Card (no type changes) ─────────────────────────────────────
 
 class _GoalsSummaryCard extends StatelessWidget {
   final double totalSaved;
@@ -329,7 +330,6 @@ class _GoalsSummaryCard extends StatelessWidget {
 class _StatChip extends StatelessWidget {
   final String label;
   final IconData icon;
-
   const _StatChip({required this.label, required this.icon});
 
   @override

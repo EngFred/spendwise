@@ -4,15 +4,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_sizes.dart';
-import '../../../core/constants/app_strings.dart';
-import '../../../database/app_database.dart';
+import 'package:spendwise/features/transactions/domain/usecases/create_transaction_usecase.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/constants/app_strings.dart';
+import '../../accounts/domain/entities/account_entity.dart';
 import '../../accounts/providers/accounts_provider.dart';
+import '../../categories/domain/entities/category_entity.dart';
 import '../../categories/providers/categories_provider.dart';
 import '../providers/transactions_provider.dart';
-import '../../../shared/widgets/app_button.dart';
-import '../../../shared/widgets/app_text_field.dart';
+import '../../../../shared/widgets/app_button.dart';
+import '../../../../shared/widgets/app_text_field.dart';
 
 class AddTransactionScreen extends ConsumerStatefulWidget {
   const AddTransactionScreen({super.key});
@@ -30,8 +32,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
   final _noteController = TextEditingController();
 
   String _type = AppStrings.expense;
-  Account? _selectedAccount;
-  Category? _selectedCategory;
+  AccountEntity? _selectedAccount;
+  CategoryEntity? _selectedCategory;
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
 
@@ -86,14 +88,16 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
       await ref
           .read(transactionsNotifierProvider.notifier)
           .createTransaction(
-            amount: double.parse(_amountController.text.replaceAll(',', '')),
-            type: _type,
-            accountId: _selectedAccount!.id,
-            categoryId: _selectedCategory!.id,
-            date: _selectedDate,
-            note: _noteController.text.trim().isEmpty
-                ? null
-                : _noteController.text.trim(),
+            CreateTransactionParams(
+              amount: double.parse(_amountController.text.replaceAll(',', '')),
+              type: _type,
+              accountId: _selectedAccount!.id!,
+              categoryId: _selectedCategory!.id!,
+              date: _selectedDate,
+              note: _noteController.text.trim().isEmpty
+                  ? null
+                  : _noteController.text.trim(),
+            ),
           );
 
       if (mounted) {
@@ -150,7 +154,6 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
         key: _formKey,
         child: Column(
           children: [
-            // Income / Expense Tab
             Container(
               margin: const EdgeInsets.all(AppSizes.md),
               padding: const EdgeInsets.all(4),
@@ -187,8 +190,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Amount
-                    _SectionLabel(label: 'Amount'),
+                    const _SectionLabel(label: 'Amount'),
                     const SizedBox(height: AppSizes.sm),
                     AppTextField(
                       label: 'Enter amount',
@@ -221,8 +223,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
 
                     const SizedBox(height: AppSizes.lg),
 
-                    // Account
-                    _SectionLabel(label: 'Account'),
+                    const _SectionLabel(label: 'Account'),
                     const SizedBox(height: AppSizes.sm),
                     accountsAsync.when(
                       data: (accounts) => accounts.isEmpty
@@ -240,8 +241,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
 
                     const SizedBox(height: AppSizes.lg),
 
-                    // Category
-                    _SectionLabel(label: 'Category'),
+                    const _SectionLabel(label: 'Category'),
                     const SizedBox(height: AppSizes.sm),
                     categoriesAsync.when(
                       data: (categories) {
@@ -262,8 +262,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
 
                     const SizedBox(height: AppSizes.lg),
 
-                    // Date
-                    _SectionLabel(label: 'Date'),
+                    const _SectionLabel(label: 'Date'),
                     const SizedBox(height: AppSizes.sm),
                     InkWell(
                       onTap: _pickDate,
@@ -304,8 +303,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
 
                     const SizedBox(height: AppSizes.lg),
 
-                    // Note
-                    _SectionLabel(label: 'Note (optional)'),
+                    const _SectionLabel(label: 'Note (optional)'),
                     const SizedBox(height: AppSizes.sm),
                     AppTextField(
                       label: 'Add a note',
@@ -316,7 +314,6 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
 
                     const SizedBox(height: AppSizes.xl),
 
-                    // Submit button
                     AppButton(
                       label: 'Save Transaction',
                       onPressed: _submit,
@@ -336,7 +333,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
   }
 }
 
-// ── Supporting widgets ───────────────────────────────────────────────────────
+// ── Supporting widgets ────────────────────────────────────────────────────────
 
 class _SectionLabel extends StatelessWidget {
   final String label;
@@ -356,9 +353,9 @@ class _SectionLabel extends StatelessWidget {
 }
 
 class _AccountSelector extends StatelessWidget {
-  final List<Account> accounts;
-  final Account? selected;
-  final void Function(Account) onSelected;
+  final List<AccountEntity> accounts;
+  final AccountEntity? selected;
+  final void Function(AccountEntity) onSelected;
 
   const _AccountSelector({
     required this.accounts,
@@ -401,9 +398,9 @@ class _AccountSelector extends StatelessWidget {
 }
 
 class _CategorySelector extends StatelessWidget {
-  final List<Category> categories;
-  final Category? selected;
-  final void Function(Category) onSelected;
+  final List<CategoryEntity> categories;
+  final CategoryEntity? selected;
+  final void Function(CategoryEntity) onSelected;
 
   const _CategorySelector({
     required this.categories,

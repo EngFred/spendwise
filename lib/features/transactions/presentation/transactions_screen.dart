@@ -3,12 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_sizes.dart';
-import '../../../core/constants/app_strings.dart';
-import '../../../database/app_database.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/constants/app_strings.dart';
+import '../domain/entities/transaction_entity.dart';
 import '../providers/transactions_provider.dart';
-import '../../../shared/widgets/empty_state.dart';
+import '../../../../shared/widgets/empty_state.dart';
 import 'widgets/transaction_tile.dart';
 
 class TransactionsScreen extends ConsumerWidget {
@@ -47,9 +47,7 @@ class TransactionsScreen extends ConsumerWidget {
                 selectedMonth.year,
                 selectedMonth.month + 1,
               );
-              if (next.isBefore(DateTime.now()) ||
-                  (next.year == DateTime.now().year &&
-                      next.month == DateTime.now().month)) {
+              if (!next.isAfter(DateTime.now())) {
                 ref.read(selectedMonthProvider.notifier).setMonth(next);
               }
             },
@@ -74,7 +72,7 @@ class TransactionsScreen extends ConsumerWidget {
           }
 
           // Group by date
-          final grouped = <String, List<Transaction>>{};
+          final grouped = <String, List<TransactionEntity>>{};
           for (final t in transactions) {
             final key = DateFormat('yyyy-MM-dd').format(t.date);
             grouped.putIfAbsent(key, () => []).add(t);
@@ -97,7 +95,6 @@ class TransactionsScreen extends ConsumerWidget {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Date header
                   Padding(
                     padding: const EdgeInsets.fromLTRB(
                       AppSizes.md,
@@ -131,7 +128,6 @@ class TransactionsScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  // Transactions
                   ...dayTransactions.map(
                     (t) => TransactionTile(
                       transaction: t,
@@ -151,19 +147,27 @@ class TransactionsScreen extends ConsumerWidget {
 
   String _formatDateHeader(DateTime date) {
     final now = DateTime.now();
-    if (date.year == now.year && date.month == now.month && date.day == now.day)
-      return 'Today';
     if (date.year == now.year &&
         date.month == now.month &&
-        date.day == now.day - 1)
+        date.day == now.day) {
+      return 'Today';
+    }
+    if (date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day - 1) {
       return 'Yesterday';
+    }
     return DateFormat('EEEE, MMM d').format(date);
   }
 
-  void _confirmDelete(BuildContext context, WidgetRef ref, Transaction t) {
+  void _confirmDelete(
+    BuildContext context,
+    WidgetRef ref,
+    TransactionEntity t,
+  ) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text(
           'Delete Transaction',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
@@ -174,20 +178,15 @@ class TransactionsScreen extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text('Cancel', style: GoogleFonts.poppins()),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               ref
                   .read(transactionsNotifierProvider.notifier)
-                  .deleteTransaction(
-                    id: t.id,
-                    accountId: t.accountId,
-                    amount: t.amount,
-                    type: t.type,
-                  );
+                  .deleteTransaction(t);
             },
             child: Text(
               'Delete',
@@ -199,6 +198,8 @@ class TransactionsScreen extends ConsumerWidget {
     );
   }
 }
+
+// ── Month selector widget ─────────────────────────────────────────────────────
 
 class _MonthSelector extends StatelessWidget {
   final DateTime selected;

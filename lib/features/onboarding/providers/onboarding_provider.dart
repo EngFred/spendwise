@@ -1,19 +1,34 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../core/utils/app_logger.dart';
+import '../onboarding_providers.dart';
 
 class OnboardingNotifier extends AsyncNotifier<bool> {
-  static const _key = 'onboarding_complete';
-
   @override
   Future<bool> build() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_key) ?? false;
+    final result = await ref.read(getOnboardingStatusUseCaseProvider).call();
+    return result.when(
+      success: (data) => data,
+      failure: (msg) {
+        AppLogger.error('OnboardingNotifier.build failed: $msg');
+        return false; // Safe default — show onboarding rather than crash
+      },
+    );
   }
 
   Future<void> completeOnboarding() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_key, true);
-    state = const AsyncData(true);
+    final result = await ref.read(completeOnboardingUseCaseProvider).call();
+    result.when(
+      success: (_) {
+        AppLogger.info('OnboardingNotifier: onboarding completed');
+        state = const AsyncData(true);
+      },
+      failure: (msg) {
+        AppLogger.error('OnboardingNotifier: completeOnboarding failed — $msg');
+        // Still mark as complete in memory so the user can proceed
+        state = const AsyncData(true);
+      },
+    );
   }
 }
 

@@ -27,7 +27,7 @@ class AppLifecycleObserver extends WidgetsBindingObserver {
 
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
-      // FIX 3a: Do NOT lock when the biometric prompt is active.
+      // 3a: Do NOT lock when the biometric prompt is active.
       // The system prompt itself causes a 'paused' event while still on the
       // lock screen. If we call lock() here we wipe the unlock() that
       // authenticate() is about to set, causing the bounce loop.
@@ -39,7 +39,7 @@ class AppLifecycleObserver extends WidgetsBindingObserver {
     }
 
     if (state == AppLifecycleState.resumed) {
-      // FIX 3b: Only navigate to lock if:
+      // 3b: Only navigate to lock if:
       //   • We are NOT already on the lock screen (avoids pointless re-push).
       //   • The session is not already unlocked (auth just succeeded).
       if (location != '/lock' && location != '/splash') {

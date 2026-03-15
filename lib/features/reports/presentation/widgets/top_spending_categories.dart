@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:spendwise/features/categories/domain/entities/category_entity.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
-import '../../../../database/app_database.dart';
 import '../../providers/reports_provider.dart';
 
 class TopSpendingCategories extends StatelessWidget {
   final MonthlySummary summary;
-  final List<Category> categories;
+  final List<CategoryEntity> categories;
 
   const TopSpendingCategories({
     super.key,

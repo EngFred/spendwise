@@ -3,13 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_sizes.dart';
+import '../../categories/domain/entities/category_entity.dart';
 import '../../categories/providers/categories_provider.dart';
-import '../../../database/app_database.dart';
+import '../domain/usecases/create_budget_usecase.dart';
 import '../providers/budgets_provider.dart';
-import '../../../shared/widgets/app_button.dart';
-import '../../../shared/widgets/app_text_field.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_sizes.dart';
+import '../../../../shared/widgets/app_button.dart';
+import '../../../../shared/widgets/app_text_field.dart';
 
 class AddBudgetScreen extends ConsumerStatefulWidget {
   const AddBudgetScreen({super.key});
@@ -22,7 +23,7 @@ class _AddBudgetScreenState extends ConsumerState<AddBudgetScreen> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
 
-  Category? _selectedCategory;
+  CategoryEntity? _selectedCategory;
   String _selectedPeriod = 'monthly';
   bool _isLoading = false;
 
@@ -63,11 +64,13 @@ class _AddBudgetScreenState extends ConsumerState<AddBudgetScreen> {
       await ref
           .read(budgetsNotifierProvider.notifier)
           .createBudget(
-            categoryId: _selectedCategory!.id,
-            amount: double.parse(_amountController.text.replaceAll(',', '')),
-            period: _selectedPeriod,
-            startDate: startDate,
-            endDate: endDate,
+            CreateBudgetParams(
+              categoryId: _selectedCategory!.id!,
+              amount: double.parse(_amountController.text.replaceAll(',', '')),
+              period: _selectedPeriod,
+              startDate: startDate,
+              endDate: endDate,
+            ),
           );
 
       if (mounted) {
@@ -123,7 +126,6 @@ class _AddBudgetScreenState extends ConsumerState<AddBudgetScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Category
               Text(
                 'Category',
                 style: GoogleFonts.poppins(
@@ -174,7 +176,6 @@ class _AddBudgetScreenState extends ConsumerState<AddBudgetScreen> {
 
               const SizedBox(height: AppSizes.lg),
 
-              // Amount
               AppTextField(
                 label: 'Budget Amount',
                 controller: _amountController,
@@ -204,7 +205,6 @@ class _AddBudgetScreenState extends ConsumerState<AddBudgetScreen> {
 
               const SizedBox(height: AppSizes.lg),
 
-              // Period
               Text(
                 'Period',
                 style: GoogleFonts.poppins(

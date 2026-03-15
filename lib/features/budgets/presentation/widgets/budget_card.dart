@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_sizes.dart';
-import '../../../../database/app_database.dart';
+import '../../../../../core/constants/app_colors.dart';
+import '../../../../../core/constants/app_sizes.dart';
+import '../../../categories/domain/entities/category_entity.dart';
+import '../../domain/entities/budget_entity.dart';
 
 class BudgetCard extends StatelessWidget {
-  final Budget budget;
-  final Category? category;
+  final BudgetEntity budget;
+  final CategoryEntity? category;
   final double spent;
   final VoidCallback onDelete;
 
