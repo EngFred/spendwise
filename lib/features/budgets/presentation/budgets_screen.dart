@@ -150,7 +150,7 @@ class BudgetsScreen extends ConsumerWidget {
   ) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text(
           'Delete Budget',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
@@ -161,12 +161,12 @@ class BudgetsScreen extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text('Cancel', style: GoogleFonts.poppins()),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               ref
                   .read(budgetsNotifierProvider.notifier)
                   .deleteBudget(budget.id!);
