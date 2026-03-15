@@ -182,7 +182,7 @@ class BudgetsScreen extends ConsumerWidget {
   }
 }
 
-// ── Overall Budget Card (no type changes needed) ──────────────────────────────
+// ── Overall Budget
 
 class _OverallBudgetCard extends StatelessWidget {
   final double totalBudgeted;
