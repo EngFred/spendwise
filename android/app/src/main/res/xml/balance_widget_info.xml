@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    AppWidgetProviderInfo for BalanceWidget.
+    targetCellWidth/Height (Android 12+): 4x2 grid cells.
+    minWidth/minHeight: fallback for older launchers.
+    updatePeriodMillis=0: we update manually from Flutter — no OS polling.
+    resizeMode: lets the user resize the widget on their home screen.
+-->
+<appwidget-provider
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="250dp"
+    android:minHeight="110dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="2"
+    android:maxResizeWidth="500dp"
+    android:maxResizeHeight="220dp"
+    android:updatePeriodMillis="0"
+    android:initialLayout="@layout/balance_widget_layout"
+    android:previewLayout="@layout/balance_widget_layout"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen" />

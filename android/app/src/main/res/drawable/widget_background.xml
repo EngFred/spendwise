@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Widget background: solid dark colour with rounded corners.
+    Using #1A1040 — slightly lighter than the app's splash #0F0C29
+    so it reads clearly on any home screen wallpaper.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#FF1A1040" />
+    <corners android:radius="16dp" />
+</shape>

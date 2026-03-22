@@ -20,6 +20,8 @@
 -keepattributes InnerClasses
 -keepattributes EnclosingMethod
 
+-keep class com.engineerfred.spendwise.BalanceWidget { *; }
+-keep class es.antonborri.home_widget.** { *; }
 
 # ── SQLite / Drift ────────────────────────────────────────────
 # Drift uses sqlite3_flutter_libs which ships a native .so.

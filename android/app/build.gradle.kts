@@ -50,23 +50,23 @@ android {
         }
     }
 
-    // ── ABI splits ───────────────────────────────────────────
-    //
-    // Produces three separate APKs instead of one fat APK:
-    //   app-arm64-v8a-release.apk   ← all modern Android phones (2017+)
-    //   app-armeabi-v7a-release.apk ← older 32-bit devices
-    //   app-x86_64-release.apk      ← emulators
-    //
-    // For direct distribution to real devices, share the arm64-v8a APK.
-    // It covers virtually every phone made in the last 7+ years.
-    splits {
-        abi {
-            isEnable = true
-            reset()
-            include("arm64-v8a", "armeabi-v7a", "x86_64")
-            isUniversalApk = false
-        }
-    }
+    // // ── ABI splits ───────────────────────────────────────────
+    // //
+    // // Produces three separate APKs instead of one fat APK:
+    // //   app-arm64-v8a-release.apk   ← all modern Android phones (2017+)
+    // //   app-armeabi-v7a-release.apk ← older 32-bit devices
+    // //   app-x86_64-release.apk      ← emulators
+    // //
+    // // For direct distribution to real devices, share the arm64-v8a APK.
+    // // It covers virtually every phone made in the last 7+ years.
+    // splits {
+    //     abi {
+    //         isEnable = true
+    //         reset()
+    //         include("arm64-v8a", "armeabi-v7a", "x86_64")
+    //         isUniversalApk = false
+    //     }
+    // }
 }
 
 dependencies {
