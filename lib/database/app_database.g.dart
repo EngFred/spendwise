@@ -1041,6 +1041,18 @@ class $TransactionsTable extends Transactions
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _lastProcessedDateMeta = const VerificationMeta(
+    'lastProcessedDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastProcessedDate =
+      GeneratedColumn<DateTime>(
+        'last_processed_date',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -1064,6 +1076,7 @@ class $TransactionsTable extends Transactions
     categoryId,
     isRecurring,
     recurringInterval,
+    lastProcessedDate,
     createdAt,
   ];
   @override
@@ -1145,6 +1158,15 @@ class $TransactionsTable extends Transactions
         ),
       );
     }
+    if (data.containsKey('last_processed_date')) {
+      context.handle(
+        _lastProcessedDateMeta,
+        lastProcessedDate.isAcceptableOrUnknown(
+          data['last_processed_date']!,
+          _lastProcessedDateMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -1196,6 +1218,10 @@ class $TransactionsTable extends Transactions
         DriftSqlType.string,
         data['${effectivePrefix}recurring_interval'],
       ),
+      lastProcessedDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_processed_date'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -1219,6 +1245,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
   final int categoryId;
   final bool isRecurring;
   final String? recurringInterval;
+  final DateTime? lastProcessedDate;
   final DateTime createdAt;
   const Transaction({
     required this.id,
@@ -1230,6 +1257,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     required this.categoryId,
     required this.isRecurring,
     this.recurringInterval,
+    this.lastProcessedDate,
     required this.createdAt,
   });
   @override
@@ -1248,6 +1276,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     if (!nullToAbsent || recurringInterval != null) {
       map['recurring_interval'] = Variable<String>(recurringInterval);
     }
+    if (!nullToAbsent || lastProcessedDate != null) {
+      map['last_processed_date'] = Variable<DateTime>(lastProcessedDate);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -1265,6 +1296,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       recurringInterval: recurringInterval == null && nullToAbsent
           ? const Value.absent()
           : Value(recurringInterval),
+      lastProcessedDate: lastProcessedDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastProcessedDate),
       createdAt: Value(createdAt),
     );
   }
@@ -1286,6 +1320,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       recurringInterval: serializer.fromJson<String?>(
         json['recurringInterval'],
       ),
+      lastProcessedDate: serializer.fromJson<DateTime?>(
+        json['lastProcessedDate'],
+      ),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -1302,6 +1339,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       'categoryId': serializer.toJson<int>(categoryId),
       'isRecurring': serializer.toJson<bool>(isRecurring),
       'recurringInterval': serializer.toJson<String?>(recurringInterval),
+      'lastProcessedDate': serializer.toJson<DateTime?>(lastProcessedDate),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -1316,6 +1354,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     int? categoryId,
     bool? isRecurring,
     Value<String?> recurringInterval = const Value.absent(),
+    Value<DateTime?> lastProcessedDate = const Value.absent(),
     DateTime? createdAt,
   }) => Transaction(
     id: id ?? this.id,
@@ -1329,6 +1368,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     recurringInterval: recurringInterval.present
         ? recurringInterval.value
         : this.recurringInterval,
+    lastProcessedDate: lastProcessedDate.present
+        ? lastProcessedDate.value
+        : this.lastProcessedDate,
     createdAt: createdAt ?? this.createdAt,
   );
   Transaction copyWithCompanion(TransactionsCompanion data) {
@@ -1348,6 +1390,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       recurringInterval: data.recurringInterval.present
           ? data.recurringInterval.value
           : this.recurringInterval,
+      lastProcessedDate: data.lastProcessedDate.present
+          ? data.lastProcessedDate.value
+          : this.lastProcessedDate,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -1364,6 +1409,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ..write('categoryId: $categoryId, ')
           ..write('isRecurring: $isRecurring, ')
           ..write('recurringInterval: $recurringInterval, ')
+          ..write('lastProcessedDate: $lastProcessedDate, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -1380,6 +1426,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     categoryId,
     isRecurring,
     recurringInterval,
+    lastProcessedDate,
     createdAt,
   );
   @override
@@ -1395,6 +1442,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           other.categoryId == this.categoryId &&
           other.isRecurring == this.isRecurring &&
           other.recurringInterval == this.recurringInterval &&
+          other.lastProcessedDate == this.lastProcessedDate &&
           other.createdAt == this.createdAt);
 }
 
@@ -1408,6 +1456,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
   final Value<int> categoryId;
   final Value<bool> isRecurring;
   final Value<String?> recurringInterval;
+  final Value<DateTime?> lastProcessedDate;
   final Value<DateTime> createdAt;
   const TransactionsCompanion({
     this.id = const Value.absent(),
@@ -1419,6 +1468,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.categoryId = const Value.absent(),
     this.isRecurring = const Value.absent(),
     this.recurringInterval = const Value.absent(),
+    this.lastProcessedDate = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   TransactionsCompanion.insert({
@@ -1431,6 +1481,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     required int categoryId,
     this.isRecurring = const Value.absent(),
     this.recurringInterval = const Value.absent(),
+    this.lastProcessedDate = const Value.absent(),
     this.createdAt = const Value.absent(),
   }) : amount = Value(amount),
        type = Value(type),
@@ -1447,6 +1498,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Expression<int>? categoryId,
     Expression<bool>? isRecurring,
     Expression<String>? recurringInterval,
+    Expression<DateTime>? lastProcessedDate,
     Expression<DateTime>? createdAt,
   }) {
     return RawValuesInsertable({
@@ -1459,6 +1511,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       if (categoryId != null) 'category_id': categoryId,
       if (isRecurring != null) 'is_recurring': isRecurring,
       if (recurringInterval != null) 'recurring_interval': recurringInterval,
+      if (lastProcessedDate != null) 'last_processed_date': lastProcessedDate,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
@@ -1473,6 +1526,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Value<int>? categoryId,
     Value<bool>? isRecurring,
     Value<String?>? recurringInterval,
+    Value<DateTime?>? lastProcessedDate,
     Value<DateTime>? createdAt,
   }) {
     return TransactionsCompanion(
@@ -1485,6 +1539,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       categoryId: categoryId ?? this.categoryId,
       isRecurring: isRecurring ?? this.isRecurring,
       recurringInterval: recurringInterval ?? this.recurringInterval,
+      lastProcessedDate: lastProcessedDate ?? this.lastProcessedDate,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -1519,6 +1574,9 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     if (recurringInterval.present) {
       map['recurring_interval'] = Variable<String>(recurringInterval.value);
     }
+    if (lastProcessedDate.present) {
+      map['last_processed_date'] = Variable<DateTime>(lastProcessedDate.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1537,6 +1595,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
           ..write('categoryId: $categoryId, ')
           ..write('isRecurring: $isRecurring, ')
           ..write('recurringInterval: $recurringInterval, ')
+          ..write('lastProcessedDate: $lastProcessedDate, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -3422,6 +3481,7 @@ typedef $$TransactionsTableCreateCompanionBuilder =
       required int categoryId,
       Value<bool> isRecurring,
       Value<String?> recurringInterval,
+      Value<DateTime?> lastProcessedDate,
       Value<DateTime> createdAt,
     });
 typedef $$TransactionsTableUpdateCompanionBuilder =
@@ -3435,6 +3495,7 @@ typedef $$TransactionsTableUpdateCompanionBuilder =
       Value<int> categoryId,
       Value<bool> isRecurring,
       Value<String?> recurringInterval,
+      Value<DateTime?> lastProcessedDate,
       Value<DateTime> createdAt,
     });
 
@@ -3522,6 +3583,11 @@ class $$TransactionsTableFilterComposer
 
   ColumnFilters<String> get recurringInterval => $composableBuilder(
     column: $table.recurringInterval,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastProcessedDate => $composableBuilder(
+    column: $table.lastProcessedDate,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3621,6 +3687,11 @@ class $$TransactionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get lastProcessedDate => $composableBuilder(
+    column: $table.lastProcessedDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -3704,6 +3775,11 @@ class $$TransactionsTableAnnotationComposer
 
   GeneratedColumn<String> get recurringInterval => $composableBuilder(
     column: $table.recurringInterval,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get lastProcessedDate => $composableBuilder(
+    column: $table.lastProcessedDate,
     builder: (column) => column,
   );
 
@@ -3794,6 +3870,7 @@ class $$TransactionsTableTableManager
                 Value<int> categoryId = const Value.absent(),
                 Value<bool> isRecurring = const Value.absent(),
                 Value<String?> recurringInterval = const Value.absent(),
+                Value<DateTime?> lastProcessedDate = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => TransactionsCompanion(
                 id: id,
@@ -3805,6 +3882,7 @@ class $$TransactionsTableTableManager
                 categoryId: categoryId,
                 isRecurring: isRecurring,
                 recurringInterval: recurringInterval,
+                lastProcessedDate: lastProcessedDate,
                 createdAt: createdAt,
               ),
           createCompanionCallback:
@@ -3818,6 +3896,7 @@ class $$TransactionsTableTableManager
                 required int categoryId,
                 Value<bool> isRecurring = const Value.absent(),
                 Value<String?> recurringInterval = const Value.absent(),
+                Value<DateTime?> lastProcessedDate = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => TransactionsCompanion.insert(
                 id: id,
@@ -3829,6 +3908,7 @@ class $$TransactionsTableTableManager
                 categoryId: categoryId,
                 isRecurring: isRecurring,
                 recurringInterval: recurringInterval,
+                lastProcessedDate: lastProcessedDate,
                 createdAt: createdAt,
               ),
           withReferenceMapper: (p0) => p0

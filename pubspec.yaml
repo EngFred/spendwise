@@ -5,7 +5,7 @@ description: "SpendWise is a private, fully offline personal finance app built
   smart budget alerts — all without an internet connection or account signup.
   Your data never leaves your device."
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.1.0+2
 
 environment:
   sdk: ^3.11.1

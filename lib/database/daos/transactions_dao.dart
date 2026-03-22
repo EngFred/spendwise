@@ -36,6 +36,14 @@ class TransactionsDao extends DatabaseAccessor<AppDatabase>
     )..where((t) => t.date.isBetweenValues(start, end))).get();
   }
 
+  Future<List<Transaction>> getAllTransactions() =>
+      (select(transactions)..orderBy([(t) => OrderingTerm.desc(t.date)])).get();
+
+  // Returns only the recurring templates — transactions with isRecurring = true.
+  // Used by the recurring processor to find what needs to run.
+  Future<List<Transaction>> getRecurringTemplates() =>
+      (select(transactions)..where((t) => t.isRecurring.equals(true))).get();
+
   Future<int> insertTransaction(TransactionsCompanion transaction) =>
       into(transactions).insert(transaction);
 
@@ -45,6 +53,10 @@ class TransactionsDao extends DatabaseAccessor<AppDatabase>
   Future<int> deleteTransaction(int id) =>
       (delete(transactions)..where((t) => t.id.equals(id))).go();
 
-  Future<List<Transaction>> getAllTransactions() =>
-      (select(transactions)..orderBy([(t) => OrderingTerm.desc(t.date)])).get();
+  // Updates the lastProcessedDate on a recurring template after it fires.
+  // Called exclusively by RecurringTransactionProcessor.
+  Future<void> updateLastProcessedDate(int id, DateTime date) =>
+      (update(transactions)..where((t) => t.id.equals(id))).write(
+        TransactionsCompanion(lastProcessedDate: Value(date)),
+      );
 }

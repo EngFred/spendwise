@@ -37,6 +37,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
 
+  bool _isRecurring = false;
+  String _recurringInterval = 'monthly';
+
   @override
   void initState() {
     super.initState();
@@ -71,34 +74,18 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
     if (picked != null) setState(() => _selectedDate = picked);
   }
 
-  // ── Balance check ─────────────────────────────────────────────────────────
-  //
-  // Only runs for expense transactions.
-  //
-  // Cash / Mobile Money → hard block. You cannot physically spend money
-  // you don't have from these accounts.
-  //
-  // Bank / Savings → soft warning. Some banks allow overdraft, and the user
-  // may have forgotten to log an income transaction. We warn but let them
-  // decide.
-  //
-  // Returns true if the transaction should proceed, false if it was blocked
-  // or the user cancelled.
   Future<bool> _passesBalanceCheck(double amount) async {
     if (_type != AppStrings.expense) return true;
-
     final account = _selectedAccount!;
     if (amount <= account.balance) return true;
 
     final formattedBalance =
         'UGX ${NumberFormat('#,###').format(account.balance)}';
     final formattedAmount = 'UGX ${NumberFormat('#,###').format(amount)}';
-
     final isHardBlock =
         account.type == 'cash' || account.type == 'mobile_money';
 
     if (isHardBlock) {
-      // Hard block — just show an error snackbar, no way to proceed.
       _showError(
         'Insufficient balance. ${account.name} has $formattedBalance '
         'but this expense is $formattedAmount.',
@@ -106,27 +93,26 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
       return false;
     }
 
-    // Soft warning for bank / savings — ask the user to confirm.
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      builder: (ctx) => AlertDialog(
         title: Text(
           'Low balance warning',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
         ),
         content: Text(
           '${account.name} only has $formattedBalance, but this expense '
-          'is $formattedAmount. This will put the account in negative balance. '
-          'Continue anyway?',
+          'is $formattedAmount. This will put the account in negative '
+          'balance. Continue anyway?',
           style: GoogleFonts.poppins(height: 1.4),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
+            onPressed: () => Navigator.pop(ctx, false),
             child: Text('Cancel', style: GoogleFonts.poppins()),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
+            onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(foregroundColor: AppColors.expense),
             child: Text(
               'Proceed',
@@ -136,7 +122,6 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
         ],
       ),
     );
-
     return confirmed ?? false;
   }
 
@@ -152,8 +137,6 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
     }
 
     final amount = double.parse(_amountController.text.replaceAll(',', ''));
-
-    // Run the balance check before doing anything else.
     final canProceed = await _passesBalanceCheck(amount);
     if (!canProceed) return;
 
@@ -172,6 +155,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
               note: _noteController.text.trim().isEmpty
                   ? null
                   : _noteController.text.trim(),
+              isRecurring: _isRecurring,
+              recurringInterval: _isRecurring ? _recurringInterval : null,
             ),
           );
 
@@ -179,7 +164,12 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
         context.pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Transaction added!', style: GoogleFonts.poppins()),
+            content: Text(
+              _isRecurring
+                  ? 'Recurring transaction saved ($_recurringInterval)'
+                  : 'Transaction added!',
+              style: GoogleFonts.poppins(),
+            ),
             backgroundColor: AppColors.income,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -258,7 +248,6 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
                 ],
               ),
             ),
-
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(AppSizes.md),
@@ -290,17 +279,11 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
                       ),
                       validator: (v) {
                         if (v == null || v.isEmpty) return 'Enter an amount';
-                        if (double.tryParse(v) == null) {
-                          return 'Invalid amount';
-                        }
+                        if (double.tryParse(v) == null) return 'Invalid amount';
                         if (double.parse(v) <= 0) return 'Amount must be > 0';
                         return null;
                       },
                     ),
-
-                    // Balance hint — shown when an account is selected and
-                    // this is an expense, so the user knows what they have
-                    // available before they even tap Save.
                     if (_selectedAccount != null &&
                         _type == AppStrings.expense) ...[
                       const SizedBox(height: AppSizes.xs),
@@ -319,14 +302,12 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
                         ),
                       ),
                     ],
-
                     const SizedBox(height: AppSizes.lg),
-
                     const _SectionLabel(label: 'Account'),
                     const SizedBox(height: AppSizes.sm),
                     accountsAsync.when(
                       data: (accounts) => accounts.isEmpty
-                          ? _EmptyAccountPrompt()
+                          ? const _EmptyAccountPrompt()
                           : _AccountSelector(
                               accounts: accounts,
                               selected: _selectedAccount,
@@ -337,9 +318,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
                           const Center(child: CircularProgressIndicator()),
                       error: (e, _) => const SizedBox.shrink(),
                     ),
-
                     const SizedBox(height: AppSizes.lg),
-
                     const _SectionLabel(label: 'Category'),
                     const SizedBox(height: AppSizes.sm),
                     categoriesAsync.when(
@@ -358,9 +337,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
                           const Center(child: CircularProgressIndicator()),
                       error: (e, _) => const SizedBox.shrink(),
                     ),
-
                     const SizedBox(height: AppSizes.lg),
-
                     const _SectionLabel(label: 'Date'),
                     const SizedBox(height: AppSizes.sm),
                     InkWell(
@@ -399,9 +376,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
                         ),
                       ),
                     ),
-
                     const SizedBox(height: AppSizes.lg),
-
                     const _SectionLabel(label: 'Note (optional)'),
                     const SizedBox(height: AppSizes.sm),
                     AppTextField(
@@ -410,16 +385,27 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
                       maxLines: 2,
                       prefixIcon: const Icon(Icons.notes_outlined),
                     ),
+                    const SizedBox(height: AppSizes.lg),
+
+                    // ── Recurring section ─────────────────────────
+                    const _SectionLabel(label: 'Recurring'),
+                    const SizedBox(height: AppSizes.sm),
+                    _RecurringSection(
+                      isDark: isDark,
+                      isRecurring: _isRecurring,
+                      selectedInterval: _recurringInterval,
+                      onToggle: (v) => setState(() => _isRecurring = v),
+                      onIntervalSelected: (v) =>
+                          setState(() => _recurringInterval = v),
+                    ),
 
                     const SizedBox(height: AppSizes.xl),
-
                     AppButton(
                       label: 'Save Transaction',
                       onPressed: _submit,
                       isLoading: _isLoading,
                       type: AppButtonType.primary,
                     ),
-
                     const SizedBox(height: AppSizes.lg),
                   ],
                 ),
@@ -428,6 +414,123 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
           ],
         ),
       ),
+    );
+  }
+}
+
+// ── Recurring section ─────────────────────────────────────────────────────────
+
+class _RecurringSection extends StatelessWidget {
+  final bool isDark;
+  final bool isRecurring;
+  final String selectedInterval;
+  final void Function(bool) onToggle;
+  final void Function(String) onIntervalSelected;
+
+  const _RecurringSection({
+    required this.isDark,
+    required this.isRecurring,
+    required this.selectedInterval,
+    required this.onToggle,
+    required this.onIntervalSelected,
+  });
+
+  static const _options = [
+    ('daily', 'Daily'),
+    ('weekly', 'Weekly'),
+    ('monthly', 'Monthly'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.md,
+            vertical: AppSizes.sm,
+          ),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkCard : AppColors.lightBackground,
+            borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+            border: Border.all(
+              color: isDark ? AppColors.darkDivider : AppColors.lightDivider,
+            ),
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.repeat_rounded,
+                color: AppColors.primary,
+                size: 20,
+              ),
+              const SizedBox(width: AppSizes.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Repeat automatically',
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+                    ),
+                    Text(
+                      'SpendWise will record this for you each period',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.5),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Switch(
+                value: isRecurring,
+                onChanged: onToggle,
+                activeColor: AppColors.primary,
+              ),
+            ],
+          ),
+        ),
+        if (isRecurring) ...[
+          const SizedBox(height: AppSizes.sm),
+          Row(
+            children: _options.indexed.map((entry) {
+              final (i, option) = entry;
+              final (value, label) = option;
+              final isSelected = selectedInterval == value;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => onIntervalSelected(value),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    margin: EdgeInsets.only(
+                      right: i < _options.length - 1 ? AppSizes.sm : 0,
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: AppSizes.md),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppColors.primary
+                          : AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+                    ),
+                    child: Text(
+                      label,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                        color: isSelected ? Colors.white : AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ],
     );
   }
 }
@@ -565,6 +668,8 @@ class _CategorySelector extends StatelessWidget {
 }
 
 class _EmptyAccountPrompt extends StatelessWidget {
+  const _EmptyAccountPrompt();
+
   @override
   Widget build(BuildContext context) {
     return Container(

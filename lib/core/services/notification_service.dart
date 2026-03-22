@@ -44,7 +44,6 @@ class NotificationService {
     return android ?? ios ?? false;
   }
 
-  /// Returns true if the device can schedule exact alarms (Android 12+).
   Future<bool> _canUseExactAlarms() async {
     if (!Platform.isAndroid) return true;
     final androidPlugin = _plugin
@@ -123,6 +122,29 @@ class NotificationService {
           channelDescription: _channelDesc,
           importance: Importance.high,
           priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
+        ),
+        iOS: const DarwinNotificationDetails(),
+      ),
+    );
+  }
+
+  // Fired by the recurring processor (both from main isolate and WorkManager)
+  // when one or more recurring transactions were auto-generated.
+  Future<void> showRecurringProcessedNotification({required int count}) async {
+    await _plugin.show(
+      id: 4,
+      title: '🔁 Recurring transactions added',
+      body: count == 1
+          ? '1 recurring transaction has been recorded automatically.'
+          : '$count recurring transactions have been recorded automatically.',
+      notificationDetails: NotificationDetails(
+        android: AndroidNotificationDetails(
+          _channelId,
+          _channelName,
+          channelDescription: _channelDesc,
+          importance: Importance.defaultImportance,
+          priority: Priority.defaultPriority,
           icon: '@mipmap/ic_launcher',
         ),
         iOS: const DarwinNotificationDetails(),

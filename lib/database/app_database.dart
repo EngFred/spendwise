@@ -22,16 +22,30 @@ part 'app_database.g.dart';
   daos: [AccountsDao, CategoriesDao, TransactionsDao, BudgetsDao, GoalsDao],
 )
 class AppDatabase extends _$AppDatabase {
+  // Normal constructor — used by the main isolate via Riverpod.
   AppDatabase() : super(_openConnection());
 
+  // Direct-file constructor — used by the WorkManager background isolate.
+  // The isolate cannot use Riverpod or LazyDatabase, so it opens the file
+  // synchronously. NativeDatabase (not createInBackground) is correct here
+  // because we are already in a background isolate.
+  AppDatabase.fromFile(File file) : super(NativeDatabase(file));
+
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) async {
       await m.createAll();
       await _insertDefaultCategories();
+    },
+    onUpgrade: (m, from, to) async {
+      // v1 → v2: add lastProcessedDate to transactions table.
+      // This column tracks when a recurring template was last auto-processed.
+      if (from < 2) {
+        await m.addColumn(transactions, transactions.lastProcessedDate);
+      }
     },
   );
 
@@ -122,4 +136,11 @@ LazyDatabase _openConnection() {
     final file = File(p.join(dbFolder.path, 'spendwise.db'));
     return NativeDatabase.createInBackground(file);
   });
+}
+
+// Returns the same File used by _openConnection.
+// Called from the WorkManager callback to open the same database.
+Future<File> getDatabaseFile() async {
+  final dbFolder = await getApplicationDocumentsDirectory();
+  return File(p.join(dbFolder.path, 'spendwise.db'));
 }
