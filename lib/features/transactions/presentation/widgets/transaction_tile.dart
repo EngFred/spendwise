@@ -8,11 +8,13 @@ import '../../domain/entities/transaction_entity.dart';
 class TransactionTile extends StatelessWidget {
   final TransactionEntity transaction;
   final VoidCallback onDelete;
+  final VoidCallback onEdit;
 
   const TransactionTile({
     super.key,
     required this.transaction,
     required this.onDelete,
+    required this.onEdit,
   });
 
   @override
@@ -61,6 +63,7 @@ class TransactionTile extends StatelessWidget {
         ),
         child: Row(
           children: [
+            // Type icon
             Container(
               width: 44,
               height: 44,
@@ -78,6 +81,8 @@ class TransactionTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSizes.md),
+
+            // Note + time
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -103,6 +108,8 @@ class TransactionTile extends StatelessWidget {
                 ],
               ),
             ),
+
+            // Amount
             Text(
               '${isIncome ? '+' : '-'} UGX ${NumberFormat('#,###').format(transaction.amount)}',
               style: GoogleFonts.poppins(
@@ -110,6 +117,24 @@ class TransactionTile extends StatelessWidget {
                 fontSize: 14,
                 color: isIncome ? AppColors.income : AppColors.expense,
               ),
+            ),
+
+            const SizedBox(width: AppSizes.xs),
+
+            // Edit button — tap to open edit screen.
+            // Swipe left to delete still works as before.
+            IconButton(
+              onPressed: onEdit,
+              icon: Icon(
+                Icons.edit_outlined,
+                size: 16,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withOpacity(0.35),
+              ),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              tooltip: 'Edit',
             ),
           ],
         ),

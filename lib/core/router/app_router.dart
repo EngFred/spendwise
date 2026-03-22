@@ -7,6 +7,9 @@ import '../../features/splash/presentation/splash_screen.dart';
 import '../../features/dashboard/presentation/dashboard_screen.dart';
 import '../../features/transactions/presentation/transactions_screen.dart';
 import '../../features/transactions/presentation/add_transaction_screen.dart';
+import '../../features/transactions/presentation/edit_transaction_screen.dart';
+import '../../features/transactions/domain/entities/transaction_entity.dart';
+import '../../features/transactions/presentation/transfer_screen.dart';
 import '../../features/accounts/domain/entities/account_entity.dart';
 import '../../features/accounts/presentation/accounts_screen.dart';
 import '../../features/accounts/presentation/add_account_screen.dart';
@@ -116,6 +119,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/transactions/add',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const AddTransactionScreen(),
+      ),
+      GoRoute(
+        path: '/transactions/edit',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final transaction = state.extra as TransactionEntity;
+          return EditTransactionScreen(transaction: transaction);
+        },
+      ),
+      GoRoute(
+        path: '/transfer',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const TransferScreen(),
       ),
       GoRoute(
         path: '/accounts/add',

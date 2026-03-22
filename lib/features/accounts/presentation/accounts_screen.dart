@@ -25,6 +25,12 @@ class AccountsScreen extends ConsumerWidget {
           style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
         ),
         actions: [
+          // Transfer between accounts
+          IconButton(
+            onPressed: () => context.push('/transfer'),
+            icon: const Icon(Icons.swap_horiz_rounded),
+            tooltip: 'Transfer',
+          ),
           IconButton(
             onPressed: () => context.push('/accounts/add'),
             icon: const Icon(Icons.add),

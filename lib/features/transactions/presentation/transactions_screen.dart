@@ -132,6 +132,8 @@ class TransactionsScreen extends ConsumerWidget {
                     (t) => TransactionTile(
                       transaction: t,
                       onDelete: () => _confirmDelete(context, ref, t),
+                      onEdit: () =>
+                          context.push('/transactions/edit', extra: t),
                     ),
                   ),
                 ],
@@ -199,7 +201,7 @@ class TransactionsScreen extends ConsumerWidget {
   }
 }
 
-// ── Month selector widget ─────────────────────────────────────────────────────
+// ── Month selector ────────────────────────────────────────────────────────────
 
 class _MonthSelector extends StatelessWidget {
   final DateTime selected;
