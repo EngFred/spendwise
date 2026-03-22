@@ -9,12 +9,14 @@ class GoalCard extends StatelessWidget {
   final GoalEntity goal;
   final VoidCallback onDelete;
   final VoidCallback? onAddSavings;
+  final VoidCallback onEdit;
 
   const GoalCard({
     super.key,
     required this.goal,
     required this.onDelete,
     required this.onAddSavings,
+    required this.onEdit,
   });
 
   @override
@@ -60,6 +62,7 @@ class GoalCard extends StatelessWidget {
           children: [
             Row(
               children: [
+                // Icon container
                 Container(
                   width: 48,
                   height: 48,
@@ -75,6 +78,8 @@ class GoalCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: AppSizes.md),
+
+                // Name + deadline
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,6 +104,8 @@ class GoalCard extends StatelessWidget {
                     ],
                   ),
                 ),
+
+                // Right-side actions: completed badge OR (edit + add savings)
                 if (goal.isCompleted)
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -120,18 +127,45 @@ class GoalCard extends StatelessWidget {
                       ),
                     ),
                   )
-                else if (onAddSavings != null)
+                else ...[
+                  // Edit button — always visible for active goals
                   IconButton(
-                    onPressed: onAddSavings,
-                    icon: const Icon(
-                      Icons.add_circle_outline,
-                      color: AppColors.primary,
+                    onPressed: onEdit,
+                    icon: Icon(
+                      Icons.edit_outlined,
+                      size: 18,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.35),
                     ),
-                    tooltip: 'Add savings',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
+                    tooltip: 'Edit goal',
                   ),
+                  // Add savings button
+                  if (onAddSavings != null)
+                    IconButton(
+                      onPressed: onAddSavings,
+                      icon: const Icon(
+                        Icons.add_circle_outline,
+                        color: AppColors.primary,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
+                      tooltip: 'Add savings',
+                    ),
+                ],
               ],
             ),
+
             const SizedBox(height: AppSizes.md),
+
             ClipRRect(
               borderRadius: BorderRadius.circular(AppSizes.radiusCircle),
               child: LinearProgressIndicator(
@@ -143,7 +177,9 @@ class GoalCard extends StatelessWidget {
                 minHeight: 8,
               ),
             ),
+
             const SizedBox(height: AppSizes.sm),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -173,9 +209,12 @@ class GoalCard extends StatelessWidget {
                 ),
               ],
             ),
+
             const SizedBox(height: AppSizes.xs),
+
             Text(
-              'Target: UGX ${NumberFormat('#,###').format(goal.targetAmount)} • ${(progress * 100).toStringAsFixed(0)}% complete',
+              'Target: UGX ${NumberFormat('#,###').format(goal.targetAmount)} • '
+              '${(progress * 100).toStringAsFixed(0)}% complete',
               style: GoogleFonts.poppins(
                 fontSize: 11,
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),

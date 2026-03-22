@@ -71,6 +71,75 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
     if (picked != null) setState(() => _selectedDate = picked);
   }
 
+  // ── Balance check ─────────────────────────────────────────────────────────
+  //
+  // Only runs for expense transactions.
+  //
+  // Cash / Mobile Money → hard block. You cannot physically spend money
+  // you don't have from these accounts.
+  //
+  // Bank / Savings → soft warning. Some banks allow overdraft, and the user
+  // may have forgotten to log an income transaction. We warn but let them
+  // decide.
+  //
+  // Returns true if the transaction should proceed, false if it was blocked
+  // or the user cancelled.
+  Future<bool> _passesBalanceCheck(double amount) async {
+    if (_type != AppStrings.expense) return true;
+
+    final account = _selectedAccount!;
+    if (amount <= account.balance) return true;
+
+    final formattedBalance =
+        'UGX ${NumberFormat('#,###').format(account.balance)}';
+    final formattedAmount = 'UGX ${NumberFormat('#,###').format(amount)}';
+
+    final isHardBlock =
+        account.type == 'cash' || account.type == 'mobile_money';
+
+    if (isHardBlock) {
+      // Hard block — just show an error snackbar, no way to proceed.
+      _showError(
+        'Insufficient balance. ${account.name} has $formattedBalance '
+        'but this expense is $formattedAmount.',
+      );
+      return false;
+    }
+
+    // Soft warning for bank / savings — ask the user to confirm.
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+          'Low balance warning',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
+        content: Text(
+          '${account.name} only has $formattedBalance, but this expense '
+          'is $formattedAmount. This will put the account in negative balance. '
+          'Continue anyway?',
+          style: GoogleFonts.poppins(height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text('Cancel', style: GoogleFonts.poppins()),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.expense),
+            child: Text(
+              'Proceed',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return confirmed ?? false;
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedAccount == null) {
@@ -82,6 +151,12 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
       return;
     }
 
+    final amount = double.parse(_amountController.text.replaceAll(',', ''));
+
+    // Run the balance check before doing anything else.
+    final canProceed = await _passesBalanceCheck(amount);
+    if (!canProceed) return;
+
     setState(() => _isLoading = true);
 
     try {
@@ -89,7 +164,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
           .read(transactionsNotifierProvider.notifier)
           .createTransaction(
             CreateTransactionParams(
-              amount: double.parse(_amountController.text.replaceAll(',', '')),
+              amount: amount,
               type: _type,
               accountId: _selectedAccount!.id!,
               categoryId: _selectedCategory!.id!,
@@ -215,11 +290,35 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen>
                       ),
                       validator: (v) {
                         if (v == null || v.isEmpty) return 'Enter an amount';
-                        if (double.tryParse(v) == null) return 'Invalid amount';
+                        if (double.tryParse(v) == null) {
+                          return 'Invalid amount';
+                        }
                         if (double.parse(v) <= 0) return 'Amount must be > 0';
                         return null;
                       },
                     ),
+
+                    // Balance hint — shown when an account is selected and
+                    // this is an expense, so the user knows what they have
+                    // available before they even tap Save.
+                    if (_selectedAccount != null &&
+                        _type == AppStrings.expense) ...[
+                      const SizedBox(height: AppSizes.xs),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Text(
+                          'Available: UGX ${NumberFormat('#,###').format(_selectedAccount!.balance)}',
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            color: _selectedAccount!.balance <= 0
+                                ? AppColors.expense
+                                : Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withOpacity(0.5),
+                          ),
+                        ),
+                      ),
+                    ],
 
                     const SizedBox(height: AppSizes.lg),
 

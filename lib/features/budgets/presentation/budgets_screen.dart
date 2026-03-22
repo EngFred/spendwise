@@ -54,9 +54,7 @@ class BudgetsScreen extends ConsumerWidget {
           }
 
           return categoriesAsync.when(
-            // ✅ categories is now List<CategoryEntity>
             data: (categories) => transactionsAsync.when(
-              // ✅ transactions is now List<TransactionEntity>
               data: (transactions) {
                 final spentByCategory = <int, double>{};
                 for (final t in transactions) {
@@ -123,6 +121,8 @@ class BudgetsScreen extends ConsumerWidget {
                             spent: spent,
                             onDelete: () =>
                                 _confirmDelete(context, ref, budget),
+                            onEdit: () =>
+                                context.push('/budgets/edit', extra: budget),
                           );
                         },
                       ),
@@ -182,7 +182,7 @@ class BudgetsScreen extends ConsumerWidget {
   }
 }
 
-// ── Overall Budget
+// ── Overall Budget Card ───────────────────────────────────────────────────────
 
 class _OverallBudgetCard extends StatelessWidget {
   final double totalBudgeted;

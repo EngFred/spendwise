@@ -95,6 +95,8 @@ class GoalsScreen extends ConsumerWidget {
                       onDelete: () => _confirmDelete(context, ref, active[i]),
                       onAddSavings: () =>
                           _showAddSavingsDialog(context, ref, active[i]),
+                      onEdit: () =>
+                          context.push('/goals/edit', extra: active[i]),
                     ),
                   ),
                 ],
@@ -123,11 +125,15 @@ class GoalsScreen extends ConsumerWidget {
                     itemCount: completed.length,
                     separatorBuilder: (_, __) =>
                         const SizedBox(height: AppSizes.sm),
+                    // Completed goals can still be edited (name, icon, color)
+                    // even though savings and completion state are locked.
                     itemBuilder: (context, i) => GoalCard(
                       goal: completed[i],
                       onDelete: () =>
                           _confirmDelete(context, ref, completed[i]),
                       onAddSavings: null,
+                      onEdit: () =>
+                          context.push('/goals/edit', extra: completed[i]),
                     ),
                   ),
                 ],
@@ -238,7 +244,7 @@ class GoalsScreen extends ConsumerWidget {
   }
 }
 
-// ── Goals Summary Card (no type changes) ─────────────────────────────────────
+// ── Goals Summary Card ────────────────────────────────────────────────────────
 
 class _GoalsSummaryCard extends StatelessWidget {
   final double totalSaved;

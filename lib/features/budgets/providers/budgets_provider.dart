@@ -40,6 +40,20 @@ class BudgetsNotifier extends AsyncNotifier<List<BudgetEntity>> {
     );
   }
 
+  Future<void> updateBudget(BudgetEntity budget) async {
+    final result = await ref.read(updateBudgetUseCaseProvider).call(budget);
+    result.when(
+      success: (_) {
+        AppLogger.info('BudgetsNotifier: updated budget id=${budget.id}');
+        ref.invalidateSelf();
+      },
+      failure: (msg) {
+        AppLogger.error('BudgetsNotifier: updateBudget failed — $msg');
+        throw Exception(msg);
+      },
+    );
+  }
+
   Future<void> deleteBudget(int id) async {
     final result = await ref.read(deleteBudgetUseCaseProvider).call(id);
     result.when(

@@ -7,12 +7,18 @@ import '../../features/splash/presentation/splash_screen.dart';
 import '../../features/dashboard/presentation/dashboard_screen.dart';
 import '../../features/transactions/presentation/transactions_screen.dart';
 import '../../features/transactions/presentation/add_transaction_screen.dart';
+import '../../features/accounts/domain/entities/account_entity.dart';
 import '../../features/accounts/presentation/accounts_screen.dart';
 import '../../features/accounts/presentation/add_account_screen.dart';
+import '../../features/accounts/presentation/edit_account_screen.dart';
 import '../../features/budgets/presentation/budgets_screen.dart';
 import '../../features/budgets/presentation/add_budget_screen.dart';
+import '../../features/budgets/presentation/edit_budget_screen.dart';
+import '../../features/budgets/domain/entities/budget_entity.dart';
 import '../../features/goals/presentation/goals_screen.dart';
 import '../../features/goals/presentation/add_goal_screen.dart';
+import '../../features/goals/presentation/edit_goal_screen.dart';
+import '../../features/goals/domain/entities/goal_entity.dart';
 import '../../features/reports/presentation/reports_screen.dart';
 import '../../features/categories/presentation/categories_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
@@ -38,7 +44,6 @@ final sessionUnlockedProvider = NotifierProvider<SessionUnlockedNotifier, bool>(
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
-    // Always start at splash — it decides where to go next
     initialLocation: '/splash',
     redirect: (context, state) {
       final isOnboardingComplete = ref.read(onboardingProvider).value ?? false;
@@ -46,14 +51,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isLockScreen = state.matchedLocation == '/lock';
       final isSplash = state.matchedLocation == '/splash';
 
-      // Splash handles its own navigation — never redirect away from it
       if (isSplash) return null;
 
-      // ── Onboarding gate ──────────────────────────────────────────────
       if (!isOnboardingComplete && !isOnboarding) return '/onboarding';
       if (isOnboardingComplete && isOnboarding) return '/dashboard';
 
-      // ── Biometric lock gate ──────────────────────────────────────────
       if (isOnboardingComplete && !isLockScreen) {
         final settings = ref.read(settingsProvider).value;
         final isUnlocked = ref.read(sessionUnlockedProvider);
@@ -121,14 +123,40 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const AddAccountScreen(),
       ),
       GoRoute(
+        path: '/accounts/edit',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          // The AccountEntity is passed via GoRouter's extra parameter.
+          // At the call site: context.push('/accounts/edit', extra: account)
+          final account = state.extra as AccountEntity;
+          return EditAccountScreen(account: account);
+        },
+      ),
+      GoRoute(
         path: '/budgets/add',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const AddBudgetScreen(),
       ),
       GoRoute(
+        path: '/budgets/edit',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final budget = state.extra as BudgetEntity;
+          return EditBudgetScreen(budget: budget);
+        },
+      ),
+      GoRoute(
         path: '/goals/add',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const AddGoalScreen(),
+      ),
+      GoRoute(
+        path: '/goals/edit',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final goal = state.extra as GoalEntity;
+          return EditGoalScreen(goal: goal);
+        },
       ),
       GoRoute(
         path: '/categories',

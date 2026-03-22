@@ -11,6 +11,7 @@ class BudgetCard extends StatelessWidget {
   final CategoryEntity? category;
   final double spent;
   final VoidCallback onDelete;
+  final VoidCallback onEdit;
 
   const BudgetCard({
     super.key,
@@ -18,6 +19,7 @@ class BudgetCard extends StatelessWidget {
     required this.category,
     required this.spent,
     required this.onDelete,
+    required this.onEdit,
   });
 
   @override
@@ -134,6 +136,23 @@ class BudgetCard extends StatelessWidget {
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(width: AppSizes.xs),
+                IconButton(
+                  onPressed: onEdit,
+                  icon: Icon(
+                    Icons.edit_outlined,
+                    size: 18,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.35),
+                  ),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
+                  tooltip: 'Edit budget',
                 ),
               ],
             ),

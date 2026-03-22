@@ -41,8 +41,23 @@ class GoalsNotifier extends AsyncNotifier<List<GoalEntity>> {
     );
   }
 
+  // Public update — used by EditGoalScreen to persist name, icon, color,
+  // target amount, and deadline changes.
+  Future<void> updateGoal(GoalEntity goal) async {
+    final result = await ref.read(updateGoalUseCaseProvider).call(goal);
+    result.when(
+      success: (_) {
+        AppLogger.info('GoalsNotifier: updated goal id=${goal.id}');
+        ref.invalidateSelf();
+      },
+      failure: (msg) {
+        AppLogger.error('GoalsNotifier: updateGoal failed — $msg');
+        throw Exception(msg);
+      },
+    );
+  }
+
   Future<void> addToSavings(int id, double amount) async {
-    // Step 1 — add the savings amount
     final result = await ref
         .read(addToSavingsUseCaseProvider)
         .call(AddToSavingsParams(id: id, amount: amount));
@@ -51,17 +66,14 @@ class GoalsNotifier extends AsyncNotifier<List<GoalEntity>> {
       success: (_) async {
         AppLogger.info('GoalsNotifier: added $amount to goal id=$id');
 
-        // Step 2 — re-fetch to check completion
         final allResult = await ref.read(getAllGoalsUseCaseProvider).call();
         final goals = allResult.dataOrNull ?? [];
         final goal = goals.where((g) => g.id == id).firstOrNull;
 
         if (goal != null && goal.savedAmount >= goal.targetAmount) {
-          // Mark as completed
           final updatedGoal = goal.copyWith(isCompleted: true);
           await ref.read(updateGoalUseCaseProvider).call(updatedGoal);
 
-          // Fire notification
           await NotificationService.instance.showGoalReachedNotification(
             goalName: goal.name,
           );

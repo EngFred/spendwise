@@ -56,6 +56,7 @@ class AccountsScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Net worth card — unchanged
                 Container(
                   width: double.infinity,
                   margin: const EdgeInsets.all(AppSizes.md),
@@ -128,6 +129,8 @@ class AccountsScreen extends ConsumerWidget {
                   itemBuilder: (context, i) => AccountCard(
                     account: accounts[i],
                     onDelete: () => _confirmDelete(context, ref, accounts[i]),
+                    onEdit: () =>
+                        context.push('/accounts/edit', extra: accounts[i]),
                   ),
                 ),
               ],

@@ -8,8 +8,14 @@ import '../../../../../core/constants/app_sizes.dart';
 class AccountCard extends StatelessWidget {
   final AccountEntity account;
   final VoidCallback onDelete;
+  final VoidCallback onEdit;
 
-  const AccountCard({super.key, required this.account, required this.onDelete});
+  const AccountCard({
+    super.key,
+    required this.account,
+    required this.onDelete,
+    required this.onEdit,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +55,7 @@ class AccountCard extends StatelessWidget {
         ),
         child: Row(
           children: [
+            // Color + type icon
             Container(
               width: 52,
               height: 52,
@@ -63,17 +70,23 @@ class AccountCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSizes.md),
+
+            // Name + type label
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Text(
-                        account.name,
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
+                      Flexible(
+                        child: Text(
+                          account.name,
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       if (account.isDefault) ...[
@@ -111,6 +124,8 @@ class AccountCard extends StatelessWidget {
                 ],
               ),
             ),
+
+            // Balance + edit button
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -134,6 +149,24 @@ class AccountCard extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+
+            const SizedBox(width: AppSizes.xs),
+
+            // Edit icon button — sits to the right of the balance.
+            // Swipe left to delete still works as before.
+            IconButton(
+              onPressed: onEdit,
+              icon: Icon(
+                Icons.edit_outlined,
+                size: 18,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withOpacity(0.35),
+              ),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              tooltip: 'Edit account',
             ),
           ],
         ),
